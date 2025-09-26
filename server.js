@@ -45,14 +45,15 @@ app.use(morgan('combined'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// 限流配置
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15分钟
-  max: 100, // 限制100个请求
-  message: '请求过于频繁，请稍后再试'
-});
-
-app.use('/api/', limiter);
+// 限流配置（Vercel 上禁用，因为 IP 不可靠）
+if (!process.env.VERCEL) {
+  const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15分钟
+    max: 100, // 限制100个请求
+    message: '请求过于频繁，请稍后再试'
+  });
+  app.use('/api/', limiter);
+}
 
 // API路由
 app.use('/api/auth', authRoutes);
