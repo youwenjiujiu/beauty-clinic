@@ -26,6 +26,9 @@ const { errorHandler } = require('./middleware/errorHandler');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Vercel 部署需要信任代理
+app.set('trust proxy', true);
+
 // 安全中间件
 app.use(helmet());
 
