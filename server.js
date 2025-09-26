@@ -1,0 +1,124 @@
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const morgan = require('morgan');
+const rateLimit = require('express-rate-limit');
+require('dotenv').config();
+
+// 调试：打印所有环境变量
+console.log('=== 环境变量检查 ===');
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('MONGODB_URI exists:', !!process.env.MONGODB_URI);
+console.log('WX_APP_ID exists:', !!process.env.WX_APP_ID);
+console.log('WX_APP_SECRET exists:', !!process.env.WX_APP_SECRET);
+console.log('JWT_SECRET exists:', !!process.env.JWT_SECRET);
+console.log('VERCEL:', process.env.VERCEL);
+console.log('==================');
+
+const authRoutes = require('./routes/auth');
+const userRoutes = require('./routes/users');
+const clinicRoutes = require('./routes/clinics');
+const appointmentRoutes = require('./routes/appointments');
+const adminRoutes = require('./routes/admin');
+const { connectDB } = require('./config/database');
+const { errorHandler } = require('./middleware/errorHandler');
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// 安全中间件
+app.use(helmet());
+
+// CORS配置
+app.use(cors({
+  origin: process.env.ALLOWED_ORIGINS?.split(',') || ['*'],
+  credentials: true
+}));
+
+// 请求日志
+app.use(morgan('combined'));
+
+// 请求体解析
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// 限流配置
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15分钟
+  max: 100, // 限制100个请求
+  message: '请求过于频繁，请稍后再试'
+});
+
+app.use('/api/', limiter);
+
+// API路由
+app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/clinics', clinicRoutes);
+app.use('/api/appointments', appointmentRoutes);
+app.use('/api/admin', adminRoutes);
+
+// 健康检查
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV
+  });
+});
+
+// 环境变量检查（仅用于调试）
+app.get('/debug/env', (req, res) => {
+  res.json({
+    NODE_ENV: process.env.NODE_ENV,
+    MONGODB_URI_exists: !!process.env.MONGODB_URI,
+    WX_APP_ID_exists: !!process.env.WX_APP_ID,
+    WX_APP_SECRET_exists: !!process.env.WX_APP_SECRET,
+    JWT_SECRET_exists: !!process.env.JWT_SECRET,
+    VERCEL: process.env.VERCEL,
+    // 不要暴露实际的值，只显示是否存在
+    env_keys: Object.keys(process.env).filter(key =>
+      key.includes('MONGO') || key.includes('WX') || key.includes('JWT')
+    )
+  });
+});
+
+// 错误处理中间件
+app.use(errorHandler);
+
+// 404处理
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: 'API端点不存在'
+  });
+});
+
+// 启动服务器
+async function startServer() {
+  try {
+    // 连接数据库
+    await connectDB();
+
+    // Vercel 部署时不需要 listen
+    if (process.env.VERCEL) {
+      console.log('🚀 Running on Vercel');
+    } else {
+      app.listen(PORT, () => {
+        console.log(`🚀 服务器运行在端口 ${PORT}`);
+        console.log(`📝 环境: ${process.env.NODE_ENV}`);
+        console.log(`🔗 健康检查: http://localhost:${PORT}/health`);
+      });
+    }
+  } catch (error) {
+    console.error('❌ 启动服务器失败:', error);
+    if (!process.env.VERCEL) {
+      process.exit(1);
+    }
+  }
+}
+
+startServer();
+
+// 导出给 Vercel
+module.exports = app;
