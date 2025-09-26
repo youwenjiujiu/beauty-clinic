@@ -24,6 +24,8 @@ router.post('/login', async (req, res) => {
     console.log('=== 环境变量调试 ===');
     console.log('WX_APP_ID:', process.env.WX_APP_ID ? '已设置' : '未设置');
     console.log('WX_APP_SECRET:', process.env.WX_APP_SECRET ? '已设置' : '未设置');
+    console.log('AppID 值:', process.env.WX_APP_ID);
+    console.log('Secret 前8位:', process.env.WX_APP_SECRET ? process.env.WX_APP_SECRET.substring(0, 8) + '...' : '未设置');
     console.log('===================');
 
     // 1. 调用微信API获取openid和session_key
