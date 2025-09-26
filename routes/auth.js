@@ -66,28 +66,51 @@ router.post('/login', async (req, res) => {
     await cacheSessionKey(openid, session_key);
 
     // 3. 查找或创建用户
-    let user = await User.findOne({ openId: openid });
+    let user;
 
-    if (!user) {
-      // 创建新用户
-      user = new User({
+    // 临时方案：如果数据库不可用，使用模拟数据
+    try {
+      user = await User.findOne({ openId: openid });
+
+      if (!user) {
+        // 创建新用户
+        user = new User({
+          openId: openid,
+          unionId: unionid,
+          appType: appType,
+          isAdmin: isAdmin(openid), // 检查是否是管理员
+          memberType: 'normal',
+          createTime: new Date(),
+          lastLoginTime: new Date()
+        });
+        await user.save();
+        console.log('创建新用户:', openid);
+      } else {
+        // 更新最后登录时间
+        user.lastLoginTime = new Date();
+        // 更新管理员状态（可能配置有变化）
+        user.isAdmin = isAdmin(openid);
+        await user.save();
+        console.log('用户登录:', openid);
+      }
+    } catch (dbError) {
+      console.log('数据库不可用，使用模拟数据');
+      console.log('\n========================================');
+      console.log('🎉 用户 OpenID:', openid);
+      console.log('👤 是否管理员:', isAdmin(openid));
+      console.log('========================================\n');
+
+      // 模拟用户对象
+      user = {
+        _id: 'mock_' + openid,
         openId: openid,
         unionId: unionid,
-        appType: appType,
-        isAdmin: isAdmin(openid), // 检查是否是管理员
+        isAdmin: isAdmin(openid),
         memberType: 'normal',
-        createTime: new Date(),
-        lastLoginTime: new Date()
-      });
-      await user.save();
-      console.log('创建新用户:', openid);
-    } else {
-      // 更新最后登录时间
-      user.lastLoginTime = new Date();
-      // 更新管理员状态（可能配置有变化）
-      user.isAdmin = isAdmin(openid);
-      await user.save();
-      console.log('用户登录:', openid);
+        nickName: '',
+        avatarUrl: '',
+        phone: ''
+      };
     }
 
     // 4. 生成JWT token
