@@ -87,6 +87,25 @@ app.get('/debug/env', (req, res) => {
   });
 });
 
+// 详细调试环境变量（临时）
+app.get('/debug/wx', (req, res) => {
+  const appId = process.env.WX_APP_ID || '';
+  const secret = process.env.WX_APP_SECRET || '';
+
+  res.json({
+    appId_length: appId.length,
+    appId_first8: appId.substring(0, 8),
+    appId_last4: appId.substring(appId.length - 4),
+    secret_length: secret.length,
+    secret_first8: secret.substring(0, 8),
+    secret_last4: secret.substring(secret.length - 4),
+    has_newline_appid: appId.includes('\n'),
+    has_space_appid: appId.includes(' '),
+    has_newline_secret: secret.includes('\n'),
+    has_space_secret: secret.includes(' ')
+  });
+});
+
 // 错误处理中间件
 app.use(errorHandler);
 
