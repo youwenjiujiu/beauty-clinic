@@ -45,6 +45,9 @@ app.use(morgan('combined'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// 静态文件服务（管理后台）
+app.use('/admin', express.static('admin-dashboard'));
+
 // 限流配置（Vercel 上禁用，因为 IP 不可靠）
 if (!process.env.VERCEL) {
   const limiter = rateLimit({
@@ -60,7 +63,10 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/clinics', clinicRoutes);
 app.use('/api/appointments', appointmentRoutes);
+app.use('/api/reviews', require('./routes/reviews'));
+app.use('/api/config', require('./routes/config'));
 app.use('/api/admin', adminRoutes);
+app.use('/api/admin/config', require('./routes/admin/config'));
 
 // 健康检查
 app.get('/health', (req, res) => {
