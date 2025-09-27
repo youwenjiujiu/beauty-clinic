@@ -29,8 +29,30 @@ const PORT = process.env.PORT || 3000;
 // Vercel 部署需要信任代理
 app.set('trust proxy', true);
 
-// 安全中间件
-app.use(helmet());
+// 安全中间件 - 配置CSP允许CDN资源
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: [
+        "'self'",
+        "'unsafe-inline'",
+        "'unsafe-eval'",
+        "https://cdn.jsdelivr.net",
+        "https://unpkg.com"
+      ],
+      styleSrc: [
+        "'self'",
+        "'unsafe-inline'",
+        "https://cdn.jsdelivr.net",
+        "https://unpkg.com"
+      ],
+      fontSrc: ["'self'", "data:", "https:"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'", "https:"]
+    }
+  }
+}));
 
 // CORS配置
 app.use(cors({
