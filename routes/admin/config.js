@@ -44,6 +44,14 @@ let configStore = {
         sortOrder: 1
       }
     ]
+  },
+  services: {
+    items: [
+      { id: 1, name: '双眼皮手术', nameKr: '쌍꺼풀 수술', category: '整形手术', description: '精细双眼皮成形术', priceRange: '150-300万韩元', duration: 60, isHot: true },
+      { id: 2, name: '玻尿酸注射', nameKr: '히알루론산 주사', category: '微整形', description: '面部填充塑形', priceRange: '50-150万韩元', duration: 30, isHot: true },
+      { id: 3, name: '激光美白', nameKr: '레이저 미백', category: '激光治疗', description: '改善肤色均匀度', priceRange: '80-200万韩元', duration: 45, isHot: false },
+      { id: 4, name: '皮肤管理', nameKr: '피부 관리', category: '皮肤管理', description: '深层清洁保养', priceRange: '30-80万韩元', duration: 90, isHot: false }
+    ]
   }
 };
 
