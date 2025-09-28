@@ -5,10 +5,10 @@ const { createApp } = Vue;
 const app = createApp({
   data() {
     return {
-      // API基础地址
+      // API基础地址 - 使用当前域名
       apiBase: window.location.hostname === 'localhost'
         ? 'http://localhost:3000'
-        : 'https://backend.vercel.app',
+        : window.location.origin,  // 使用当前页面的域名
 
       // 管理员信息
       adminName: '管理员',
