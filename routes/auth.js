@@ -6,6 +6,72 @@ const { cacheSessionKey, getSessionKey } = require('../utils/redis');
 const { isAdmin } = require('../config/admin');
 
 /**
+ * Web管理员登录
+ * POST /api/auth/admin-login
+ */
+router.post('/admin-login', async (req, res) => {
+  const { password } = req.body;
+
+  // 简单的密码验证
+  if (password !== 'admin2025') {
+    return res.status(401).json({
+      success: false,
+      message: '密码错误'
+    });
+  }
+
+  try {
+    // 查找或创建一个管理员用户
+    let adminUser = await User.findOne({ openId: 'admin_web_user' });
+
+    if (!adminUser) {
+      adminUser = new User({
+        openId: 'admin_web_user',
+        nickName: 'Web管理员',
+        isAdmin: true,
+        memberType: 'normal',
+        status: 'active',
+        createTime: new Date(),
+        lastLoginTime: new Date()
+      });
+      await adminUser.save();
+    } else {
+      adminUser.lastLoginTime = new Date();
+      await adminUser.save();
+    }
+
+    // 生成JWT token
+    const token = jwt.sign(
+      {
+        userId: adminUser._id,
+        openId: adminUser.openId,
+        isAdmin: true
+      },
+      process.env.JWT_SECRET || 'default_jwt_secret_2025',
+      { expiresIn: '7d' }
+    );
+
+    res.json({
+      success: true,
+      data: {
+        token,
+        userInfo: {
+          openId: adminUser.openId,
+          nickName: adminUser.nickName,
+          isAdmin: adminUser.isAdmin
+        }
+      }
+    });
+  } catch (error) {
+    console.error('管理员登录错误:', error);
+    res.status(500).json({
+      success: false,
+      message: '登录失败'
+    });
+  }
+});
+
+/**
  * 微信登录
  * POST /api/auth/login
  */

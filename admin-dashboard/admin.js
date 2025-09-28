@@ -47,7 +47,7 @@ const app = createApp({
     }
   },
 
-  mounted() {
+  async mounted() {
     console.log('Vue app mounted successfully');
     console.log('Current menu:', this.activeMenu);
 
@@ -58,9 +58,19 @@ const app = createApp({
       return;
     }
 
-    console.log('Token found, loading initial data');
-    // 加载初始数据
-    this.loadHotSearches();
+    // 验证token是否有效
+    try {
+      console.log('Validating existing token...');
+      // 尝试加载数据，如果token无效会失败
+      await this.loadHotSearches();
+      console.log('Token is valid, continuing...');
+    } catch (error) {
+      console.log('Token invalid, showing login');
+      this.token = '';
+      localStorage.removeItem('admin_token');
+      this.showLogin();
+      return;
+    }
 
     // 测试按钮是否可点击
     setTimeout(() => {
@@ -74,15 +84,33 @@ const app = createApp({
 
   methods: {
     // 显示登录框
-    showLogin() {
+    async showLogin() {
       const password = prompt('请输入管理员密码：');
-      if (password === 'admin2025') {
-        // 模拟登录成功
-        this.token = 'mock_admin_token_' + Date.now();
-        localStorage.setItem('admin_token', this.token);
-        this.loadHotSearches();
-      } else {
-        alert('密码错误！');
+
+      try {
+        // 调用真实的登录API
+        const response = await axios.post(`${this.apiBase}/api/auth/admin-login`, {
+          password: password
+        });
+
+        if (response.data.success) {
+          // 登录成功，保存token
+          this.token = response.data.data.token;
+          localStorage.setItem('admin_token', this.token);
+          this.adminName = response.data.data.userInfo.nickName || '管理员';
+          console.log('登录成功！');
+          this.loadHotSearches();
+        } else {
+          alert('密码错误！');
+          this.showLogin();
+        }
+      } catch (error) {
+        console.error('登录失败:', error);
+        if (error.response && error.response.status === 401) {
+          alert('密码错误！');
+        } else {
+          alert('登录失败，请稍后重试');
+        }
         this.showLogin();
       }
     },
