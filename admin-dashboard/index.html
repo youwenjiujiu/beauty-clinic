@@ -178,6 +178,82 @@
             </table>
           </div>
 
+          <!-- 预约管理 -->
+          <div v-if="activeMenu === 'appointments'" class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-2xl font-bold mb-6">预约管理</h2>
+
+            <!-- 状态筛选 -->
+            <div class="mb-4 flex space-x-2">
+              <button
+                v-for="status in appointmentStatuses"
+                :key="status.value"
+                @click="selectedAppointmentStatus = status.value"
+                :class="['px-4 py-2 rounded', selectedAppointmentStatus === status.value ? 'bg-blue-500 text-white' : 'bg-gray-200']"
+              >
+                {{ status.label }}
+                <span class="ml-1">({{ getStatusCount(status.value) }})</span>
+              </button>
+            </div>
+
+            <!-- 预约列表 -->
+            <table class="w-full border-collapse">
+              <thead>
+                <tr class="bg-gray-50">
+                  <th class="border px-4 py-2 text-left">预约编号</th>
+                  <th class="border px-4 py-2 text-left">客户姓名</th>
+                  <th class="border px-4 py-2 text-left">联系电话</th>
+                  <th class="border px-4 py-2 text-left">诊所</th>
+                  <th class="border px-4 py-2 text-left">服务项目</th>
+                  <th class="border px-4 py-2 text-left">预约时间</th>
+                  <th class="border px-4 py-2 text-left">状态</th>
+                  <th class="border px-4 py-2 text-left">操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="appointment in filteredAppointments" :key="appointment.id">
+                  <td class="border px-4 py-2">{{ appointment.id }}</td>
+                  <td class="border px-4 py-2">{{ appointment.customerName }}</td>
+                  <td class="border px-4 py-2">{{ appointment.phone }}</td>
+                  <td class="border px-4 py-2">{{ appointment.clinicName }}</td>
+                  <td class="border px-4 py-2">{{ appointment.serviceName }}</td>
+                  <td class="border px-4 py-2">{{ formatDate(appointment.appointmentTime) }}</td>
+                  <td class="border px-4 py-2">
+                    <span :class="getStatusClass(appointment.status)">
+                      {{ getStatusLabel(appointment.status) }}
+                    </span>
+                  </td>
+                  <td class="border px-4 py-2">
+                    <button
+                      v-if="appointment.status === 'pending'"
+                      @click="updateAppointmentStatus(appointment.id, 'confirmed')"
+                      class="text-green-500 hover:underline mr-2"
+                    >
+                      确认
+                    </button>
+                    <button
+                      v-if="appointment.status === 'pending' || appointment.status === 'confirmed'"
+                      @click="updateAppointmentStatus(appointment.id, 'cancelled')"
+                      class="text-red-500 hover:underline mr-2"
+                    >
+                      取消
+                    </button>
+                    <button
+                      v-if="appointment.status === 'confirmed'"
+                      @click="updateAppointmentStatus(appointment.id, 'completed')"
+                      class="text-blue-500 hover:underline"
+                    >
+                      完成
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div v-if="filteredAppointments.length === 0" class="text-center py-8 text-gray-500">
+              暂无{{ getStatusLabel(selectedAppointmentStatus) }}的预约
+            </div>
+          </div>
+
           <!-- 服务项目管理 -->
           <div v-if="activeMenu === 'services'" class="bg-white rounded-lg shadow p-6">
             <h2 class="text-2xl font-bold mb-6">服务项目管理</h2>

@@ -60,7 +60,18 @@ const app = createApp({
       selectedCategory: '全部',
       showServiceModal: false,
       editingService: null,
-      nextServiceId: 1
+      nextServiceId: 1,
+
+      // 预约管理
+      appointments: [],
+      appointmentStatuses: [
+        { value: 'all', label: '全部' },
+        { value: 'pending', label: '待确认' },
+        { value: 'confirmed', label: '已确认' },
+        { value: 'completed', label: '已完成' },
+        { value: 'cancelled', label: '已取消' }
+      ],
+      selectedAppointmentStatus: 'all'
     }
   },
 
@@ -70,6 +81,13 @@ const app = createApp({
         return this.services;
       }
       return this.services.filter(s => s.category === this.selectedCategory);
+    },
+
+    filteredAppointments() {
+      if (this.selectedAppointmentStatus === 'all') {
+        return this.appointments;
+      }
+      return this.appointments.filter(a => a.status === this.selectedAppointmentStatus);
     }
   },
 
@@ -619,6 +637,122 @@ const app = createApp({
       }
     },
 
+    // 加载预约数据
+    async loadAppointments() {
+      try {
+        // Mock预约数据
+        this.appointments = [
+          {
+            id: 'APT001',
+            customerName: '李小明',
+            phone: '010-12345678',
+            clinicName: 'Seoul Beauty Clinic',
+            serviceName: '双眼皮手术',
+            appointmentTime: new Date('2025-02-01 14:00'),
+            status: 'pending',
+            createTime: new Date('2025-01-28')
+          },
+          {
+            id: 'APT002',
+            customerName: '王美丽',
+            phone: '010-87654321',
+            clinicName: 'Gangnam Medical Center',
+            serviceName: '玻尿酸注射',
+            appointmentTime: new Date('2025-02-02 10:00'),
+            status: 'confirmed',
+            createTime: new Date('2025-01-27')
+          },
+          {
+            id: 'APT003',
+            customerName: '张小花',
+            phone: '010-55551234',
+            clinicName: 'Seoul Beauty Clinic',
+            serviceName: '激光美白',
+            appointmentTime: new Date('2025-01-30 15:30'),
+            status: 'completed',
+            createTime: new Date('2025-01-25')
+          },
+          {
+            id: 'APT004',
+            customerName: '赵先生',
+            phone: '010-99998888',
+            clinicName: 'Test Beauty Clinic',
+            serviceName: '皮肤管理',
+            appointmentTime: new Date('2025-02-03 11:00'),
+            status: 'pending',
+            createTime: new Date('2025-01-28')
+          },
+          {
+            id: 'APT005',
+            customerName: '刘女士',
+            phone: '010-66667777',
+            clinicName: 'Gangnam Medical Center',
+            serviceName: '水光针',
+            appointmentTime: new Date('2025-01-31 09:00'),
+            status: 'cancelled',
+            createTime: new Date('2025-01-26')
+          }
+        ];
+        console.log('预约数据加载成功，共', this.appointments.length, '条');
+      } catch (error) {
+        console.error('加载预约失败:', error);
+      }
+    },
+
+    // 格式化日期
+    formatDate(date) {
+      if (!date) return '';
+      const d = new Date(date);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    },
+
+    // 获取状态标签
+    getStatusLabel(status) {
+      const statusMap = {
+        'pending': '待确认',
+        'confirmed': '已确认',
+        'completed': '已完成',
+        'cancelled': '已取消',
+        'all': '全部'
+      };
+      return statusMap[status] || status;
+    },
+
+    // 获取状态样式
+    getStatusClass(status) {
+      const classMap = {
+        'pending': 'text-yellow-600',
+        'confirmed': 'text-blue-600',
+        'completed': 'text-green-600',
+        'cancelled': 'text-gray-500'
+      };
+      return classMap[status] || '';
+    },
+
+    // 获取状态数量
+    getStatusCount(status) {
+      if (status === 'all') {
+        return this.appointments.length;
+      }
+      return this.appointments.filter(a => a.status === status).length;
+    },
+
+    // 更新预约状态
+    async updateAppointmentStatus(id, newStatus) {
+      const appointment = this.appointments.find(a => a.id === id);
+      if (appointment) {
+        appointment.status = newStatus;
+
+        // 模拟保存到后端
+        try {
+          console.log(`更新预约 ${id} 状态为 ${newStatus}`);
+          alert(`预约状态已更新为：${this.getStatusLabel(newStatus)}`);
+        } catch (error) {
+          console.error('更新预约状态失败:', error);
+        }
+      }
+    },
+
     // 保存轮播图
     async saveBanners() {
       try {
@@ -658,6 +792,9 @@ const app = createApp({
           break;
         case 'services':
           this.loadServices();
+          break;
+        case 'appointments':
+          this.loadAppointments();
           break;
       }
     }
