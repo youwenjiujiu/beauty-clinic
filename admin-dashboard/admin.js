@@ -628,7 +628,11 @@ const app = createApp({
 
     // 切换区域展开/收起
     toggleDistrictExpand(index) {
-      Vue.set(this.expandedDistricts, index, !this.expandedDistricts[index]);
+      // Vue 3 需要使用 reactive 或确保响应式更新
+      // 使用 Vue.set 的替代方式
+      const newExpanded = { ...this.expandedDistricts };
+      newExpanded[index] = !newExpanded[index];
+      this.expandedDistricts = newExpanded;
     },
 
     // 加载服务项目
