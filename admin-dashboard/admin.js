@@ -52,7 +52,24 @@ const app = createApp({
       },
 
       // 轮播图
-      banners: []
+      banners: [],
+
+      // 服务项目管理
+      services: [],
+      serviceCategories: ['全部', '整形手术', '皮肤管理', '微整形', '激光治疗', '其他'],
+      selectedCategory: '全部',
+      showServiceModal: false,
+      editingService: null,
+      nextServiceId: 1
+    }
+  },
+
+  computed: {
+    filteredServices() {
+      if (this.selectedCategory === '全部') {
+        return this.services;
+      }
+      return this.services.filter(s => s.category === this.selectedCategory);
     }
   },
 
@@ -505,6 +522,103 @@ const app = createApp({
       this.banners.splice(index, 1);
     },
 
+    // 加载服务项目
+    async loadServices() {
+      try {
+        const result = await this.apiRequest('GET', '/admin/config/services');
+        if (result.success && result.data.content) {
+          this.services = result.data.content.items || [];
+          this.nextServiceId = Math.max(...this.services.map(s => s.id || 0)) + 1;
+        }
+      } catch (error) {
+        console.error('加载服务项目失败:', error);
+        // 使用默认数据
+        this.services = [
+          { id: 1, name: '双眼皮手术', nameKr: '쌍꺼풀 수술', category: '整形手术', description: '精细双眼皮成形术', priceRange: '150-300万韩元', duration: 60, isHot: true },
+          { id: 2, name: '玻尿酸注射', nameKr: '히알루론산 주사', category: '微整形', description: '面部填充塑形', priceRange: '50-150万韩元', duration: 30, isHot: true },
+          { id: 3, name: '激光美白', nameKr: '레이저 미백', category: '激光治疗', description: '改善肤色均匀度', priceRange: '80-200万韩元', duration: 45, isHot: false },
+          { id: 4, name: '皮肤管理', nameKr: '피부 관리', category: '皮肤管理', description: '深层清洁保养', priceRange: '30-80万韩元', duration: 90, isHot: false }
+        ];
+        this.nextServiceId = 5;
+      }
+    },
+
+    // 添加服务项目
+    addService() {
+      this.editingService = {
+        name: '',
+        nameKr: '',
+        category: '皮肤管理',
+        description: '',
+        priceRange: '',
+        duration: 60,
+        isHot: false
+      };
+      this.showServiceModal = true;
+    },
+
+    // 编辑服务项目
+    editService(service) {
+      this.editingService = { ...service };
+      this.showServiceModal = true;
+    },
+
+    // 保存服务项目
+    async saveService() {
+      try {
+        if (!this.editingService.id) {
+          // 新增
+          this.editingService.id = this.nextServiceId++;
+          this.services.push(this.editingService);
+        } else {
+          // 编辑
+          const index = this.services.findIndex(s => s.id === this.editingService.id);
+          if (index !== -1) {
+            this.services[index] = { ...this.editingService };
+          }
+        }
+
+        // 保存到配置
+        await this.apiRequest('POST', '/admin/config', {
+          type: 'services',
+          name: '服务项目配置',
+          content: { items: this.services },
+          isActive: true
+        });
+
+        alert('保存成功！');
+        this.showServiceModal = false;
+        this.editingService = null;
+      } catch (error) {
+        console.error('保存服务项目失败:', error);
+        alert('保存失败');
+      }
+    },
+
+    // 删除服务项目
+    async deleteService(id) {
+      if (!confirm('确定要删除该服务项目吗？')) {
+        return;
+      }
+
+      const index = this.services.findIndex(s => s.id === id);
+      if (index !== -1) {
+        this.services.splice(index, 1);
+
+        try {
+          await this.apiRequest('POST', '/admin/config', {
+            type: 'services',
+            name: '服务项目配置',
+            content: { items: this.services },
+            isActive: true
+          });
+          alert('删除成功！');
+        } catch (error) {
+          console.error('删除失败:', error);
+        }
+      }
+    },
+
     // 保存轮播图
     async saveBanners() {
       try {
@@ -541,6 +655,9 @@ const app = createApp({
           break;
         case 'banners':
           this.loadBanners();
+          break;
+        case 'services':
+          this.loadServices();
           break;
       }
     }

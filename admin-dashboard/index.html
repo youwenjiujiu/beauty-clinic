@@ -178,6 +178,48 @@
             </table>
           </div>
 
+          <!-- 服务项目管理 -->
+          <div v-if="activeMenu === 'services'" class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-2xl font-bold mb-6">服务项目管理</h2>
+
+            <div class="mb-4">
+              <button @click="addService" class="bg-green-500 text-white px-4 py-2 rounded">添加服务项目</button>
+            </div>
+
+            <!-- 服务分类标签 -->
+            <div class="mb-4 flex space-x-2">
+              <button
+                v-for="cat in serviceCategories"
+                :key="cat"
+                @click="selectedCategory = cat"
+                :class="['px-4 py-2 rounded', selectedCategory === cat ? 'bg-blue-500 text-white' : 'bg-gray-200']"
+              >
+                {{ cat }}
+              </button>
+            </div>
+
+            <!-- 服务列表 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div v-for="service in filteredServices" :key="service.id" class="border rounded-lg p-4">
+                <div class="flex justify-between items-start mb-2">
+                  <h3 class="font-bold text-lg">{{ service.name }}</h3>
+                  <span v-if="service.isHot" class="bg-red-500 text-white text-xs px-2 py-1 rounded">热门</span>
+                </div>
+                <p class="text-gray-600 text-sm mb-2">{{ service.nameKr }}</p>
+                <p class="text-gray-700 mb-2">{{ service.description }}</p>
+                <div class="text-sm text-gray-500 space-y-1">
+                  <p>分类：{{ service.category }}</p>
+                  <p>价格：{{ service.priceRange }}</p>
+                  <p>时长：{{ service.duration }}分钟</p>
+                </div>
+                <div class="mt-3 flex justify-end space-x-2">
+                  <button @click="editService(service)" class="text-blue-500 hover:underline">编辑</button>
+                  <button @click="deleteService(service.id)" class="text-red-500 hover:underline">删除</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- 轮播图管理 -->
           <div v-if="activeMenu === 'banners'" class="bg-white rounded-lg shadow p-6">
             <h2 class="text-2xl font-bold mb-6">轮播图管理</h2>
@@ -210,6 +252,61 @@
             <button @click="saveBanners" class="mt-4 ml-2 bg-blue-500 text-white px-6 py-2 rounded">保存配置</button>
           </div>
         </main>
+      </div>
+
+      <!-- 服务项目编辑模态框 -->
+      <div v-if="showServiceModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <h3 class="text-xl font-bold mb-4">{{ editingService?.id ? '编辑服务项目' : '添加服务项目' }}</h3>
+
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium mb-1">服务名称</label>
+              <input v-model="editingService.name" class="w-full border rounded px-3 py-2" placeholder="中文名称">
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium mb-1">韩文名称</label>
+              <input v-model="editingService.nameKr" class="w-full border rounded px-3 py-2" placeholder="韩文名称">
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium mb-1">服务分类</label>
+              <select v-model="editingService.category" class="w-full border rounded px-3 py-2">
+                <option value="整形手术">整形手术</option>
+                <option value="皮肤管理">皮肤管理</option>
+                <option value="微整形">微整形</option>
+                <option value="激光治疗">激光治疗</option>
+                <option value="其他">其他</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium mb-1">服务描述</label>
+              <textarea v-model="editingService.description" class="w-full border rounded px-3 py-2" rows="3" placeholder="详细描述"></textarea>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium mb-1">价格范围</label>
+              <input v-model="editingService.priceRange" class="w-full border rounded px-3 py-2" placeholder="例：100-300万韩元">
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium mb-1">服务时长（分钟）</label>
+              <input v-model.number="editingService.duration" type="number" class="w-full border rounded px-3 py-2" placeholder="60">
+            </div>
+
+            <div class="flex items-center">
+              <input type="checkbox" v-model="editingService.isHot" id="serviceHot" class="mr-2">
+              <label for="serviceHot">热门服务</label>
+            </div>
+          </div>
+
+          <div class="flex justify-end space-x-2 mt-6">
+            <button @click="showServiceModal = false; editingService = null" class="px-4 py-2 border rounded">取消</button>
+            <button @click="saveService" class="px-4 py-2 bg-blue-500 text-white rounded">保存</button>
+          </div>
+        </div>
       </div>
 
       <!-- 诊所编辑模态框 -->
