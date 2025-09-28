@@ -18,7 +18,18 @@ async function verifyToken(req, res, next) {
 
   try {
     // 验证token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'default_jwt_secret_2025');
+
+    // 如果是Web管理员，直接使用token中的信息
+    if (decoded.openId === 'admin_web_user') {
+      req.user = {
+        id: decoded.userId,
+        openId: decoded.openId,
+        isAdmin: true,
+        memberType: 'normal'
+      };
+      return next();
+    }
 
     // 查询用户信息
     const user = await User.findById(decoded.userId);
@@ -99,16 +110,26 @@ async function optionalAuth(req, res, next) {
   const token = authHeader.substring(7);
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.userId);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'default_jwt_secret_2025');
 
-    if (user && user.status !== 'banned') {
+    // 如果是Web管理员，直接使用token中的信息
+    if (decoded.openId === 'admin_web_user') {
       req.user = {
-        id: user._id,
-        openId: user.openId,
-        isAdmin: user.isAdmin,
-        memberType: user.memberType
+        id: decoded.userId,
+        openId: decoded.openId,
+        isAdmin: true,
+        memberType: 'normal'
       };
+    } else {
+      const user = await User.findById(decoded.userId);
+      if (user && user.status !== 'banned') {
+        req.user = {
+          id: user._id,
+          openId: user.openId,
+          isAdmin: user.isAdmin,
+          memberType: user.memberType
+        };
+      }
     }
   } catch (error) {
     // Token无效，但不阻止请求

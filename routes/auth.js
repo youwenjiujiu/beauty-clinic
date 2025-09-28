@@ -21,24 +21,15 @@ router.post('/admin-login', async (req, res) => {
   }
 
   try {
-    // 查找或创建一个管理员用户
-    let adminUser = await User.findOne({ openId: 'admin_web_user' });
-
-    if (!adminUser) {
-      adminUser = new User({
-        openId: 'admin_web_user',
-        nickName: 'Web管理员',
-        isAdmin: true,
-        memberType: 'normal',
-        status: 'active',
-        createTime: new Date(),
-        lastLoginTime: new Date()
-      });
-      await adminUser.save();
-    } else {
-      adminUser.lastLoginTime = new Date();
-      await adminUser.save();
-    }
+    // 在没有数据库的情况下，直接生成管理员信息
+    const adminUser = {
+      _id: 'admin_web_user_id',
+      openId: 'admin_web_user',
+      nickName: 'Web管理员',
+      isAdmin: true,
+      memberType: 'normal',
+      status: 'active'
+    };
 
     // 生成JWT token
     const token = jwt.sign(
