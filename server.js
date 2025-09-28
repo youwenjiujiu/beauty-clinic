@@ -86,7 +86,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/clinics', require('./routes/clinics-simple'));
 app.use('/api/appointments', appointmentRoutes);
 app.use('/api/reviews', require('./routes/reviews'));
-app.use('/api/config', require('./routes/publicConfig'));
+app.use('/api/config', require('./routes/publicConfig-simple'));
 app.use('/api/admin', adminRoutes);
 app.use('/api/admin/config', require('./routes/admin/config'));
 
