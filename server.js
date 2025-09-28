@@ -83,7 +83,7 @@ if (!process.env.VERCEL) {
 // API路由
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
-app.use('/api/clinics', clinicRoutes);
+app.use('/api/clinics', require('./routes/clinics-simple'));
 app.use('/api/appointments', appointmentRoutes);
 app.use('/api/reviews', require('./routes/reviews'));
 app.use('/api/config', require('./routes/config'));

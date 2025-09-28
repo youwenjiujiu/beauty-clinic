@@ -40,7 +40,16 @@ const app = createApp({
       // 诊所列表
       clinics: [],
       showClinicModal: false,
-      editingClinic: null,
+      editingClinic: {
+        name: '',
+        nameKr: '',
+        district: '',
+        address: '',
+        phone: '',
+        specialties: '',
+        priceRange: '中档',
+        featured: false
+      },
 
       // 轮播图
       banners: []
@@ -383,10 +392,57 @@ const app = createApp({
       }
     },
 
+    // 新建诊所
+    addClinic() {
+      this.editingClinic = {
+        name: '',
+        nameKr: '',
+        district: '',
+        address: '',
+        phone: '',
+        specialties: '',
+        priceRange: '中档',
+        featured: false
+      };
+      this.showClinicModal = true;
+    },
+
     // 编辑诊所
     editClinic(clinic) {
       this.editingClinic = { ...clinic };
       this.showClinicModal = true;
+    },
+
+    // 保存诊所
+    async saveClinic() {
+      try {
+        // 处理specialties字段（字符串转数组）
+        const clinicData = {
+          ...this.editingClinic,
+          specialties: typeof this.editingClinic.specialties === 'string'
+            ? this.editingClinic.specialties.split(',').map(s => s.trim()).filter(s => s)
+            : this.editingClinic.specialties
+        };
+
+        let result;
+        if (this.editingClinic._id) {
+          // 更新现有诊所
+          result = await this.apiRequest('PUT', `/clinics/admin/${this.editingClinic._id}`, clinicData);
+        } else {
+          // 创建新诊所
+          result = await this.apiRequest('POST', '/clinics/admin', clinicData);
+        }
+
+        if (result.success) {
+          alert('保存成功！');
+          this.showClinicModal = false;
+          this.editingClinic = null;
+          // 重新加载诊所列表
+          this.loadClinics();
+        }
+      } catch (error) {
+        console.error('保存诊所失败:', error);
+      }
     },
 
     // 切换诊所状态

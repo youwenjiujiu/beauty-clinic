@@ -141,7 +141,7 @@
             <h2 class="text-2xl font-bold mb-6">诊所管理</h2>
 
             <div class="mb-4">
-              <button @click="showClinicModal = true" class="bg-green-500 text-white px-4 py-2 rounded">添加诊所</button>
+              <button @click="addClinic" class="bg-green-500 text-white px-4 py-2 rounded">添加诊所</button>
             </div>
 
             <table class="w-full border-collapse">
@@ -210,6 +210,71 @@
             <button @click="saveBanners" class="mt-4 ml-2 bg-blue-500 text-white px-6 py-2 rounded">保存配置</button>
           </div>
         </main>
+      </div>
+
+      <!-- 诊所编辑模态框 -->
+      <div v-if="showClinicModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <h3 class="text-xl font-bold mb-4">{{ editingClinic?._id ? '编辑诊所' : '添加诊所' }}</h3>
+
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium mb-1">诊所名称</label>
+              <input v-model="editingClinic.name" class="w-full border rounded px-3 py-2" placeholder="英文名称">
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium mb-1">韩文名称</label>
+              <input v-model="editingClinic.nameKr" class="w-full border rounded px-3 py-2" placeholder="韩文名称">
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium mb-1">地区</label>
+              <select v-model="editingClinic.district" class="w-full border rounded px-3 py-2">
+                <option value="">请选择</option>
+                <option value="江南">江南</option>
+                <option value="新沙">新沙</option>
+                <option value="狎鸥亭">狎鸥亭</option>
+                <option value="清潭">清潭</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium mb-1">详细地址</label>
+              <input v-model="editingClinic.address" class="w-full border rounded px-3 py-2" placeholder="详细地址">
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium mb-1">联系电话</label>
+              <input v-model="editingClinic.phone" class="w-full border rounded px-3 py-2" placeholder="联系电话">
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium mb-1">专长</label>
+              <input v-model="editingClinic.specialties" class="w-full border rounded px-3 py-2" placeholder="专长，用逗号分隔">
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium mb-1">价格档次</label>
+              <select v-model="editingClinic.priceRange" class="w-full border rounded px-3 py-2">
+                <option value="低档">低档</option>
+                <option value="中档">中档</option>
+                <option value="中高档">中高档</option>
+                <option value="高档">高档</option>
+              </select>
+            </div>
+
+            <div class="flex items-center">
+              <input type="checkbox" v-model="editingClinic.featured" id="featured" class="mr-2">
+              <label for="featured">推荐诊所</label>
+            </div>
+          </div>
+
+          <div class="flex justify-end space-x-2 mt-6">
+            <button @click="showClinicModal = false; editingClinic = null" class="px-4 py-2 border rounded">取消</button>
+            <button @click="saveClinic" class="px-4 py-2 bg-blue-500 text-white rounded">保存</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
