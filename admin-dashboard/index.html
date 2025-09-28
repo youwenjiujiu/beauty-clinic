@@ -296,6 +296,111 @@
             </div>
           </div>
 
+          <!-- 评价管理 -->
+          <div v-if="activeMenu === 'reviews'" class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-2xl font-bold mb-6">评价管理</h2>
+
+            <!-- 状态筛选 -->
+            <div class="mb-4 flex space-x-2">
+              <button
+                v-for="status in reviewStatuses"
+                :key="status.value"
+                @click="selectedReviewStatus = status.value"
+                :class="['px-4 py-2 rounded', selectedReviewStatus === status.value ? 'bg-blue-500 text-white' : 'bg-gray-200']"
+              >
+                {{ status.label }}
+                <span class="ml-1">({{ getReviewStatusCount(status.value) }})</span>
+              </button>
+            </div>
+
+            <!-- 评价列表 -->
+            <div class="space-y-4">
+              <div v-for="review in filteredReviews" :key="review.id" class="border rounded-lg p-4 bg-white">
+                <div class="flex justify-between items-start mb-2">
+                  <div>
+                    <span class="font-bold">{{ review.customerName }}</span>
+                    <span class="ml-2 text-gray-500">{{ formatDate(review.createTime) }}</span>
+                  </div>
+                  <div class="flex items-center">
+                    <div class="mr-3">
+                      <span v-for="n in 5" :key="n" class="text-yellow-500">
+                        {{ n <= review.rating ? '★' : '☆' }}
+                      </span>
+                      <span class="ml-2 text-gray-600">{{ review.rating }}.0</span>
+                    </div>
+                    <span :class="getReviewStatusClass(review.status)">
+                      {{ getReviewStatusLabel(review.status) }}
+                    </span>
+                  </div>
+                </div>
+
+                <div class="text-gray-600 mb-2">
+                  <span class="font-semibold">诊所：</span>{{ review.clinicName }}
+                  <span class="ml-4 font-semibold">服务：</span>{{ review.serviceName }}
+                </div>
+
+                <div class="bg-gray-50 p-3 rounded mb-3">
+                  <p class="text-gray-800">{{ review.content }}</p>
+                </div>
+
+                <!-- 图片 -->
+                <div v-if="review.images && review.images.length > 0" class="flex space-x-2 mb-3">
+                  <div v-for="(img, index) in review.images" :key="index" class="w-20 h-20 bg-gray-200 rounded flex items-center justify-center text-gray-500 text-xs">
+                    图片{{ index + 1 }}
+                  </div>
+                </div>
+
+                <!-- 回复 -->
+                <div v-if="review.reply" class="bg-blue-50 p-3 rounded mb-3">
+                  <p class="text-sm text-gray-600 mb-1">商家回复：</p>
+                  <p class="text-gray-800">{{ review.reply }}</p>
+                </div>
+
+                <!-- 操作按钮 -->
+                <div class="flex justify-end space-x-2">
+                  <button
+                    v-if="review.status === 'pending'"
+                    @click="approveReview(review.id)"
+                    class="text-green-500 hover:underline"
+                  >
+                    通过
+                  </button>
+                  <button
+                    v-if="review.status === 'pending'"
+                    @click="rejectReview(review.id)"
+                    class="text-red-500 hover:underline"
+                  >
+                    拒绝
+                  </button>
+                  <button
+                    v-if="!review.reply"
+                    @click="replyReview(review)"
+                    class="text-blue-500 hover:underline"
+                  >
+                    回复
+                  </button>
+                  <button
+                    v-if="review.status === 'approved'"
+                    @click="hideReview(review.id)"
+                    class="text-orange-500 hover:underline"
+                  >
+                    隐藏
+                  </button>
+                  <button
+                    @click="deleteReview(review.id)"
+                    class="text-red-500 hover:underline"
+                  >
+                    删除
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div v-if="filteredReviews.length === 0" class="text-center py-8 text-gray-500">
+              暂无{{ getReviewStatusLabel(selectedReviewStatus) }}的评价
+            </div>
+          </div>
+
           <!-- 轮播图管理 -->
           <div v-if="activeMenu === 'banners'" class="bg-white rounded-lg shadow p-6">
             <h2 class="text-2xl font-bold mb-6">轮播图管理</h2>

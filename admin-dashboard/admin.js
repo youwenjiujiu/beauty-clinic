@@ -71,7 +71,18 @@ const app = createApp({
         { value: 'completed', label: '已完成' },
         { value: 'cancelled', label: '已取消' }
       ],
-      selectedAppointmentStatus: 'all'
+      selectedAppointmentStatus: 'all',
+
+      // 评价管理
+      reviews: [],
+      reviewStatuses: [
+        { value: 'all', label: '全部' },
+        { value: 'pending', label: '待审核' },
+        { value: 'approved', label: '已通过' },
+        { value: 'rejected', label: '已拒绝' },
+        { value: 'hidden', label: '已隐藏' }
+      ],
+      selectedReviewStatus: 'all'
     }
   },
 
@@ -88,6 +99,13 @@ const app = createApp({
         return this.appointments;
       }
       return this.appointments.filter(a => a.status === this.selectedAppointmentStatus);
+    },
+
+    filteredReviews() {
+      if (this.selectedReviewStatus === 'all') {
+        return this.reviews;
+      }
+      return this.reviews.filter(r => r.status === this.selectedReviewStatus);
     }
   },
 
@@ -768,6 +786,168 @@ const app = createApp({
       } catch (error) {
         console.error('保存失败:', error);
       }
+    },
+
+    // 加载评价数据
+    async loadReviews() {
+      try {
+        // Mock评价数据
+        this.reviews = [
+          {
+            id: 'REV001',
+            customerName: '张小美',
+            clinicName: 'Seoul Beauty Clinic',
+            serviceName: '双眼皮手术',
+            rating: 5,
+            content: '医生技术非常好，手术效果很自然，恢复也很快。整个过程都很专业，护士姐姐也很温柔。强烈推荐！',
+            images: ['img1.jpg', 'img2.jpg'],
+            status: 'approved',
+            createTime: new Date('2025-01-26'),
+            reply: '感谢您的认可！祝您越来越美丽！'
+          },
+          {
+            id: 'REV002',
+            customerName: '李女士',
+            clinicName: 'Gangnam Medical Center',
+            serviceName: '玻尿酸注射',
+            rating: 4,
+            content: '效果不错，就是价格有点贵。医生很细心，会详细讲解注意事项。',
+            images: [],
+            status: 'approved',
+            createTime: new Date('2025-01-25'),
+            reply: null
+          },
+          {
+            id: 'REV003',
+            customerName: '王先生',
+            clinicName: 'Test Beauty Clinic',
+            serviceName: '激光祛斑',
+            rating: 3,
+            content: '效果一般，可能需要多做几次才能看到明显效果。服务态度还可以。',
+            images: ['img3.jpg'],
+            status: 'pending',
+            createTime: new Date('2025-01-28'),
+            reply: null
+          },
+          {
+            id: 'REV004',
+            customerName: '赵小姐',
+            clinicName: 'Seoul Beauty Clinic',
+            serviceName: '水光针',
+            rating: 5,
+            content: '超级满意！皮肤变得水嫩有光泽，朋友都说我变年轻了。环境也很好，很干净。',
+            images: ['img4.jpg', 'img5.jpg', 'img6.jpg'],
+            status: 'approved',
+            createTime: new Date('2025-01-24'),
+            reply: '谢谢您的好评！期待您的下次光临！'
+          },
+          {
+            id: 'REV005',
+            customerName: '刘小姐',
+            clinicName: 'Gangnam Medical Center',
+            serviceName: '皮肤管理',
+            rating: 2,
+            content: '预约等待时间太长，体验不太好。',
+            images: [],
+            status: 'hidden',
+            createTime: new Date('2025-01-23'),
+            reply: null
+          },
+          {
+            id: 'REV006',
+            customerName: '陈女士',
+            clinicName: 'Seoul Beauty Clinic',
+            serviceName: '瘦脸针',
+            rating: 1,
+            content: '效果不明显，感觉被骗了。',
+            images: [],
+            status: 'rejected',
+            createTime: new Date('2025-01-22'),
+            reply: null
+          }
+        ];
+        console.log('评价数据加载成功，共', this.reviews.length, '条');
+      } catch (error) {
+        console.error('加载评价失败:', error);
+      }
+    },
+
+    // 获取评价状态标签
+    getReviewStatusLabel(status) {
+      const statusMap = {
+        'pending': '待审核',
+        'approved': '已通过',
+        'rejected': '已拒绝',
+        'hidden': '已隐藏',
+        'all': '全部'
+      };
+      return statusMap[status] || status;
+    },
+
+    // 获取评价状态样式
+    getReviewStatusClass(status) {
+      const classMap = {
+        'pending': 'px-2 py-1 bg-yellow-100 text-yellow-600 rounded text-sm',
+        'approved': 'px-2 py-1 bg-green-100 text-green-600 rounded text-sm',
+        'rejected': 'px-2 py-1 bg-red-100 text-red-600 rounded text-sm',
+        'hidden': 'px-2 py-1 bg-gray-100 text-gray-600 rounded text-sm'
+      };
+      return classMap[status] || '';
+    },
+
+    // 获取评价状态数量
+    getReviewStatusCount(status) {
+      if (status === 'all') {
+        return this.reviews.length;
+      }
+      return this.reviews.filter(r => r.status === status).length;
+    },
+
+    // 通过评价
+    approveReview(id) {
+      const review = this.reviews.find(r => r.id === id);
+      if (review) {
+        review.status = 'approved';
+        alert('评价已通过审核');
+      }
+    },
+
+    // 拒绝评价
+    rejectReview(id) {
+      const review = this.reviews.find(r => r.id === id);
+      if (review) {
+        review.status = 'rejected';
+        alert('评价已拒绝');
+      }
+    },
+
+    // 隐藏评价
+    hideReview(id) {
+      const review = this.reviews.find(r => r.id === id);
+      if (review) {
+        review.status = 'hidden';
+        alert('评价已隐藏');
+      }
+    },
+
+    // 回复评价
+    replyReview(review) {
+      const reply = prompt('请输入回复内容：');
+      if (reply) {
+        review.reply = reply;
+        alert('回复成功');
+      }
+    },
+
+    // 删除评价
+    deleteReview(id) {
+      if (confirm('确定要删除这条评价吗？')) {
+        const index = this.reviews.findIndex(r => r.id === id);
+        if (index !== -1) {
+          this.reviews.splice(index, 1);
+          alert('评价已删除');
+        }
+      }
     }
   },
 
@@ -792,6 +972,9 @@ const app = createApp({
           break;
         case 'appointments':
           this.loadAppointments();
+          break;
+        case 'reviews':
+          this.loadReviews();
           break;
       }
     }
