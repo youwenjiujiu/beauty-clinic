@@ -1,26 +1,12 @@
 const router = require('express').Router();
 
-// 从admin/config.js导入配置存储
-let adminConfigStore;
-try {
-  // 尝试从admin/config获取实际配置
-  const adminConfigModule = require('./admin/config');
-  // 获取配置存储（这里简化处理，实际应该共享同一个存储）
-  adminConfigStore = adminConfigModule.configStore;
-} catch (e) {
-  // 如果无法获取，使用默认值
-  adminConfigStore = null;
-}
+// 直接导入admin配置存储
+const adminConfig = require('./admin/config');
 
 // 从admin/config共享配置存储
 const getConfigStore = () => {
-  // 如果有admin配置，直接使用
-  if (adminConfigStore) {
-    return adminConfigStore;
-  }
-
-  // 否则返回默认值，但这应该与admin/config.js保持同步
-  return require('./admin/config').configStore || {
+  // 直接使用admin配置的存储
+  return adminConfig.configStore || {
     hot_searches: {
       items: [
         { keyword: '双眼皮', priority: 100, isHot: true },
