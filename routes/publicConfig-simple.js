@@ -183,6 +183,32 @@ router.get('/banners', async (req, res) => {
 });
 
 /**
+ * 获取服务分类（公开接口，小程序用）
+ * GET /api/config/categories
+ */
+router.get('/categories', async (req, res) => {
+  try {
+    const categories = [
+      { id: 'skin', name: '皮肤管理', icon: '🧴' },
+      { id: 'plastic', name: '整形手术', icon: '💉' },
+      { id: 'injection', name: '微整形', icon: '💊' },
+      { id: 'laser', name: '激光治疗', icon: '✨' }
+    ];
+
+    res.json({
+      success: true,
+      data: categories
+    });
+  } catch (error) {
+    console.error('获取服务分类失败:', error);
+    res.status(500).json({
+      success: false,
+      message: '获取服务分类失败'
+    });
+  }
+});
+
+/**
  * 获取服务项目（公开接口，小程序用）
  * GET /api/config/services
  */
