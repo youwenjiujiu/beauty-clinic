@@ -18,7 +18,7 @@ console.log('==================');
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const clinicRoutes = require('./routes/clinics');
-const appointmentRoutes = require('./routes/appointments');
+const appointmentRoutes = require('./routes/appointments-simple'); // 使用简化版本（无数据库）
 const adminRoutes = require('./routes/admin');
 const { connectDB } = require('./config/database');
 const { errorHandler } = require('./middleware/errorHandler');
