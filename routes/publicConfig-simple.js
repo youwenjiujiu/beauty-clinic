@@ -1,5 +1,15 @@
 const router = require('express').Router();
 
+// 专科分类数据（可动态修改）
+let specialtiesData = [
+  { id: 'skin', name: '皮肤管理', icon: '🧴', order: 1 },
+  { id: 'plastic', name: '整形手术', icon: '💉', order: 2 },
+  { id: 'injection', name: '微整形', icon: '💊', order: 3 },
+  { id: 'laser', name: '激光治疗', icon: '✨', order: 4 },
+  { id: 'body', name: '身体塑形', icon: '💪', order: 5 },
+  { id: 'antiaging', name: '抗衰老', icon: '🌟', order: 6 }
+];
+
 // 韩国区域数据 - 简化版本，只保留6个主要区作为示例
 const districtsData = [
   {
@@ -81,12 +91,8 @@ router.get('/filter-options', async (req, res) => {
       success: true,
       data: {
         districts: districtsData,
-        services: [
-          { value: 'skin', label: '皮肤管理' },
-          { value: 'plastic', label: '整形手术' },
-          { value: 'injection', label: '微整形' },
-          { value: 'laser', label: '激光治疗' }
-        ],
+        services: specialtiesData.map(s => ({ value: s.id, label: s.name })),
+        specialties: specialtiesData,
         priceRanges: [
           { value: '0-100', label: '100万韩元以下' },
           { value: '100-300', label: '100-300万韩元' },
@@ -186,14 +192,32 @@ router.get('/banners', async (req, res) => {
  * 获取服务分类（公开接口，小程序用）
  * GET /api/config/categories
  */
+// 服务分类数据（主页图标和筛选分类共用）
+let categoriesStore = [
+  { id: 'skin', name: '皮肤管理', icon: '🧴', order: 1, type: 'both' },
+  { id: 'plastic', name: '整形手术', icon: '💉', order: 2, type: 'both' },
+  { id: 'injection', name: '微整形', icon: '💊', order: 3, type: 'both' },
+  { id: 'laser', name: '激光治疗', icon: '✨', order: 4, type: 'both' },
+  { id: 'body', name: '身体塑形', icon: '💪', order: 5, type: 'filter' },
+  { id: 'antiaging', name: '抗衰老', icon: '🌟', order: 6, type: 'filter' }
+];
+
 router.get('/categories', async (req, res) => {
   try {
-    const categories = [
-      { id: 'skin', name: '皮肤管理', icon: '🧴' },
-      { id: 'plastic', name: '整形手术', icon: '💉' },
-      { id: 'injection', name: '微整形', icon: '💊' },
-      { id: 'laser', name: '激光治疗', icon: '✨' }
-    ];
+    const { type = 'all' } = req.query;
+    let categories = [...categoriesStore];
+
+    // 根据类型过滤
+    if (type === 'home') {
+      // 主页图标只显示both和home类型
+      categories = categories.filter(c => c.type === 'both' || c.type === 'home');
+    } else if (type === 'filter') {
+      // 筛选分类显示both和filter类型
+      categories = categories.filter(c => c.type === 'both' || c.type === 'filter');
+    }
+
+    // 按order排序
+    categories.sort((a, b) => a.order - b.order);
 
     res.json({
       success: true,
@@ -204,6 +228,36 @@ router.get('/categories', async (req, res) => {
     res.status(500).json({
       success: false,
       message: '获取服务分类失败'
+    });
+  }
+});
+
+/**
+ * 添加/更新分类（管理员）
+ * POST /api/config/categories
+ */
+router.post('/categories', async (req, res) => {
+  try {
+    const { categories } = req.body;
+    if (!categories || !Array.isArray(categories)) {
+      return res.status(400).json({
+        success: false,
+        message: '分类数据格式不正确'
+      });
+    }
+
+    categoriesStore = categories;
+
+    res.json({
+      success: true,
+      message: '分类更新成功',
+      data: categoriesStore
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: '更新分类失败',
+      error: error.message
     });
   }
 });

@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>分类管理 - 管理后台</title>
+  <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+  <script src="https://unpkg.com/vue@2.6.14/dist/vue.js"></script>
+  <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      background-color: #f0f2f5;
+      font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", Arial, sans-serif;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 30px;
+      border-radius: 10px;
+      margin-bottom: 30px;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 28px;
+    }
+    .header p {
+      margin: 10px 0 0 0;
+      opacity: 0.9;
+    }
+    .categories-panel {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
+    }
+    .category-item {
+      padding: 15px;
+      margin: 10px 0;
+      background: #f5f7fa;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      cursor: move;
+      transition: all 0.3s;
+    }
+    .category-item:hover {
+      background: #e6f2ff;
+      transform: translateX(5px);
+    }
+    .category-item.sortable-ghost {
+      opacity: 0.4;
+      background: #c0c4cc;
+    }
+    .category-icon {
+      font-size: 24px;
+      width: 40px;
+      text-align: center;
+    }
+    .category-info {
+      flex: 1;
+    }
+    .category-name {
+      font-size: 16px;
+      font-weight: 500;
+      color: #303133;
+    }
+    .category-id {
+      font-size: 12px;
+      color: #909399;
+      margin-top: 5px;
+    }
+    .category-type {
+      padding: 3px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+    .type-home {
+      background: #e6f7ff;
+      color: #1890ff;
+    }
+    .type-filter {
+      background: #fff7e6;
+      color: #fa8c16;
+    }
+    .type-both {
+      background: #f6ffed;
+      color: #52c41a;
+    }
+    .actions-section {
+      margin-top: 30px;
+      display: flex;
+      gap: 15px;
+    }
+    .drag-handle {
+      color: #909399;
+      cursor: move;
+    }
+    .save-indicator {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #52c41a;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 5px;
+      display: none;
+      z-index: 9999;
+    }
+    .category-actions {
+      display: flex;
+      gap: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div id="app" class="container">
+    <div class="header">
+      <h1>🏷️ 分类管理</h1>
+      <p>管理小程序的服务分类和筛选分类</p>
+    </div>
+
+    <div class="categories-panel">
+      <el-alert
+        title="拖拽分类可以调整显示顺序"
+        type="info"
+        show-icon
+        :closable="false"
+        style="margin-bottom: 20px">
+      </el-alert>
+
+      <!-- 分类列表 -->
+      <div id="categoryList">
+        <div v-for="(category, index) in categories" :key="category.id"
+          class="category-item" :data-id="category.id">
+          <div class="drag-handle">☰</div>
+          <div class="category-icon">{{ category.icon || '📦' }}</div>
+          <div class="category-info">
+            <div class="category-name">{{ category.name }}</div>
+            <div class="category-id">ID: {{ category.id }}</div>
+          </div>
+          <div class="category-type" :class="'type-' + category.type">
+            {{ getTypeLabel(category.type) }}
+          </div>
+          <div class="category-actions">
+            <el-button size="small" @click="editCategory(category)">编辑</el-button>
+            <el-button size="small" type="danger" @click="deleteCategory(index)">删除</el-button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 操作按钮 -->
+      <div class="actions-section">
+        <el-button type="primary" @click="addCategory">+ 添加分类</el-button>
+        <el-button type="success" @click="saveCategories">保存到服务器</el-button>
+        <el-button @click="resetCategories">重置为默认</el-button>
+      </div>
+    </div>
+
+    <!-- 编辑对话框 -->
+    <el-dialog :title="editMode === 'add' ? '添加分类' : '编辑分类'"
+      :visible.sync="dialogVisible" width="500px">
+      <el-form :model="currentCategory" label-width="100px">
+        <el-form-item label="分类ID">
+          <el-input v-model="currentCategory.id" placeholder="例如: skin"
+            :disabled="editMode === 'edit'"></el-input>
+        </el-form-item>
+        <el-form-item label="分类名称">
+          <el-input v-model="currentCategory.name" placeholder="例如: 皮肤管理"></el-input>
+        </el-form-item>
+        <el-form-item label="图标">
+          <el-input v-model="currentCategory.icon" placeholder="例如: 🧴">
+            <template slot="append">
+              <el-dropdown @command="selectIcon">
+                <el-button>选择图标</el-button>
+                <el-dropdown-menu slot="dropdown">
+                  <el-dropdown-item command="🧴">🧴 护肤</el-dropdown-item>
+                  <el-dropdown-item command="💉">💉 注射</el-dropdown-item>
+                  <el-dropdown-item command="💊">💊 药物</el-dropdown-item>
+                  <el-dropdown-item command="✨">✨ 激光</el-dropdown-item>
+                  <el-dropdown-item command="💪">💪 塑形</el-dropdown-item>
+                  <el-dropdown-item command="🌟">🌟 抗衰</el-dropdown-item>
+                  <el-dropdown-item command="🏥">🏥 医院</el-dropdown-item>
+                  <el-dropdown-item command="👨‍⚕️">👨‍⚕️ 医生</el-dropdown-item>
+                </el-dropdown-menu>
+              </el-dropdown>
+            </template>
+          </el-input>
+        </el-form-item>
+        <el-form-item label="显示位置">
+          <el-select v-model="currentCategory.type" placeholder="请选择">
+            <el-option label="仅主页图标" value="home"></el-option>
+            <el-option label="仅筛选分类" value="filter"></el-option>
+            <el-option label="两处都显示" value="both"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="排序权重">
+          <el-input-number v-model="currentCategory.order" :min="1" :max="100"></el-input-number>
+        </el-form-item>
+      </el-form>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="dialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="confirmEdit">确定</el-button>
+      </span>
+    </el-dialog>
+
+    <!-- 保存指示器 -->
+    <div class="save-indicator" id="saveIndicator">✅ 已保存到服务器</div>
+  </div>
+
+  <script>
+    new Vue({
+      el: '#app',
+      data: {
+        categories: [],
+        dialogVisible: false,
+        editMode: 'add',
+        currentCategory: {
+          id: '',
+          name: '',
+          icon: '',
+          type: 'both',
+          order: 1
+        },
+        editIndex: -1,
+        apiUrl: 'https://beauty-clinic-backend-anvh7eios-youwenjiujius-projects.vercel.app'
+      },
+      mounted() {
+        this.loadCategories();
+        this.initSortable();
+      },
+      methods: {
+        // 加载分类
+        async loadCategories() {
+          try {
+            const response = await axios.get(`${this.apiUrl}/api/config/categories`);
+            if (response.data.success) {
+              this.categories = response.data.data;
+            }
+          } catch (error) {
+            console.error('加载分类失败:', error);
+            this.$message.error('加载分类失败');
+          }
+        },
+
+        // 初始化拖拽
+        initSortable() {
+          const el = document.getElementById('categoryList');
+          Sortable.create(el, {
+            animation: 150,
+            handle: '.drag-handle',
+            onEnd: (evt) => {
+              const item = this.categories.splice(evt.oldIndex, 1)[0];
+              this.categories.splice(evt.newIndex, 0, item);
+              this.updateOrder();
+            }
+          });
+        },
+
+        // 更新排序
+        updateOrder() {
+          this.categories.forEach((cat, index) => {
+            cat.order = index + 1;
+          });
+        },
+
+        // 添加分类
+        addCategory() {
+          this.editMode = 'add';
+          this.currentCategory = {
+            id: '',
+            name: '',
+            icon: '',
+            type: 'both',
+            order: this.categories.length + 1
+          };
+          this.dialogVisible = true;
+        },
+
+        // 编辑分类
+        editCategory(category) {
+          this.editMode = 'edit';
+          this.currentCategory = { ...category };
+          this.editIndex = this.categories.findIndex(c => c.id === category.id);
+          this.dialogVisible = true;
+        },
+
+        // 删除分类
+        deleteCategory(index) {
+          this.$confirm('确定要删除这个分类吗？', '提示', {
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'warning'
+          }).then(() => {
+            this.categories.splice(index, 1);
+            this.updateOrder();
+            this.$message.success('删除成功');
+          }).catch(() => {});
+        },
+
+        // 确认编辑
+        confirmEdit() {
+          if (!this.currentCategory.id || !this.currentCategory.name) {
+            this.$message.warning('请填写必要信息');
+            return;
+          }
+
+          if (this.editMode === 'add') {
+            // 检查ID是否重复
+            if (this.categories.some(c => c.id === this.currentCategory.id)) {
+              this.$message.warning('分类ID已存在');
+              return;
+            }
+            this.categories.push({ ...this.currentCategory });
+          } else {
+            this.categories.splice(this.editIndex, 1, { ...this.currentCategory });
+          }
+
+          this.dialogVisible = false;
+          this.$message.success('操作成功');
+        },
+
+        // 选择图标
+        selectIcon(icon) {
+          this.currentCategory.icon = icon;
+        },
+
+        // 获取类型标签
+        getTypeLabel(type) {
+          const labels = {
+            home: '主页图标',
+            filter: '筛选分类',
+            both: '两处都显'
+          };
+          return labels[type] || type;
+        },
+
+        // 保存到服务器
+        async saveCategories() {
+          try {
+            const response = await axios.post(`${this.apiUrl}/api/config/categories`, {
+              categories: this.categories
+            });
+
+            if (response.data.success) {
+              this.$message.success('保存成功');
+              // 显示保存指示器
+              const indicator = document.getElementById('saveIndicator');
+              indicator.style.display = 'block';
+              setTimeout(() => {
+                indicator.style.display = 'none';
+              }, 3000);
+            }
+          } catch (error) {
+            console.error('保存失败:', error);
+            this.$message.error('保存失败');
+          }
+        },
+
+        // 重置为默认
+        resetCategories() {
+          this.$confirm('确定要重置为默认分类吗？', '提示', {
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'warning'
+          }).then(() => {
+            this.categories = [
+              { id: 'skin', name: '皮肤管理', icon: '🧴', order: 1, type: 'both' },
+              { id: 'plastic', name: '整形手术', icon: '💉', order: 2, type: 'both' },
+              { id: 'injection', name: '微整形', icon: '💊', order: 3, type: 'both' },
+              { id: 'laser', name: '激光治疗', icon: '✨', order: 4, type: 'both' },
+              { id: 'body', name: '身体塑形', icon: '💪', order: 5, type: 'filter' },
+              { id: 'antiaging', name: '抗衰老', icon: '🌟', order: 6, type: 'filter' }
+            ];
+            this.$message.success('已重置为默认分类');
+          }).catch(() => {});
+        }
+      }
+    });
+  </script>
+</body>
+</html>
