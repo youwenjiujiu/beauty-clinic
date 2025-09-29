@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>项目管理 - 管理后台</title>
+  <link href="https://cdn.jsdelivr.net/npm/element-ui@2.15.14/lib/theme-chalk/index.css" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      background: #f0f2f5;
+    }
+
+    #app {
+      min-height: 100vh;
+    }
+
+    .navbar {
+      background: white;
+      box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+    }
+
+    .navbar-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: #1890ff;
+    }
+
+    .navbar-menu {
+      display: flex;
+      gap: 24px;
+    }
+
+    .navbar-menu a {
+      text-decoration: none;
+      color: #515a6e;
+      font-size: 15px;
+      transition: color 0.3s;
+    }
+
+    .navbar-menu a:hover,
+    .navbar-menu a.active {
+      color: #1890ff;
+    }
+
+    .main-container {
+      padding: 24px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .content-card {
+      background: white;
+      border-radius: 8px;
+      padding: 24px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    }
+
+    .header-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .stats-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .stat-value {
+      font-size: 32px;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+
+    .stat-label {
+      font-size: 14px;
+      opacity: 0.9;
+    }
+
+    .project-item {
+      padding: 12px;
+      border: 1px solid #e8e8e8;
+      border-radius: 4px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.3s;
+      cursor: move;
+    }
+
+    .project-item:hover {
+      background: #f5f5f5;
+      border-color: #1890ff;
+    }
+
+    .project-item.dragging {
+      opacity: 0.5;
+    }
+
+    .project-info {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex: 1;
+    }
+
+    .project-order {
+      width: 30px;
+      height: 30px;
+      background: #1890ff;
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    .project-name {
+      font-size: 15px;
+      font-weight: 500;
+      color: #333;
+    }
+
+    .project-category {
+      display: inline-block;
+      padding: 2px 8px;
+      background: #f0f2f5;
+      border-radius: 4px;
+      font-size: 12px;
+      color: #666;
+    }
+
+    .drag-handle {
+      cursor: move;
+      color: #999;
+      padding: 0 8px;
+    }
+
+    .drag-handle:hover {
+      color: #1890ff;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #999;
+    }
+
+    .empty-state i {
+      font-size: 48px;
+      margin-bottom: 16px;
+      color: #ddd;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <!-- 导航栏 -->
+    <nav class="navbar">
+      <div class="navbar-title">
+        🏥 医美机构管理系统
+      </div>
+      <div class="navbar-menu">
+        <a href="/admin">首页</a>
+        <a href="/admin/clinics.html">机构管理</a>
+        <a href="/admin/users.html">用户管理</a>
+        <a href="/admin/appointments.html">预约管理</a>
+        <a href="/admin/reviews.html">评价管理</a>
+        <a href="/admin/projects.html" class="active">项目管理</a>
+        <a href="#" @click="logout">退出</a>
+      </div>
+    </nav>
+
+    <!-- 主内容 -->
+    <div class="main-container">
+      <!-- 统计卡片 -->
+      <div class="stats-cards">
+        <div class="stat-card">
+          <div class="stat-value">{{ projects.length }}</div>
+          <div class="stat-label">总项目数</div>
+        </div>
+        <div class="stat-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+          <div class="stat-value">{{ categories.length }}</div>
+          <div class="stat-label">项目分类</div>
+        </div>
+        <div class="stat-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+          <div class="stat-value">{{ lastUpdateTime }}</div>
+          <div class="stat-label">最后更新</div>
+        </div>
+      </div>
+
+      <!-- 项目管理 -->
+      <div class="content-card">
+        <div class="header-actions">
+          <h2>项目列表</h2>
+          <div>
+            <el-button type="primary" @click="showAddDialog = true" icon="el-icon-plus">
+              添加项目
+            </el-button>
+            <el-button @click="saveOrder" icon="el-icon-refresh">
+              保存排序
+            </el-button>
+          </div>
+        </div>
+
+        <!-- 项目列表 -->
+        <div v-if="projects.length > 0" id="projectList">
+          <div v-for="project in sortedProjects"
+               :key="project.id"
+               class="project-item"
+               :data-id="project.id"
+               draggable="true"
+               @dragstart="handleDragStart"
+               @dragover="handleDragOver"
+               @drop="handleDrop"
+               @dragend="handleDragEnd">
+            <span class="drag-handle">☰</span>
+            <div class="project-info">
+              <div class="project-order">{{ project.order }}</div>
+              <div class="project-name">{{ project.name }}</div>
+              <div class="project-category">{{ project.category }}</div>
+            </div>
+            <div>
+              <el-button type="text" @click="editProject(project)">编辑</el-button>
+              <el-button type="text" style="color: #f56c6c;" @click="deleteProject(project)">删除</el-button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 空状态 -->
+        <div v-else class="empty-state">
+          <i class="el-icon-folder-opened"></i>
+          <p>暂无项目</p>
+          <el-button type="primary" @click="showAddDialog = true" style="margin-top: 16px;">
+            添加第一个项目
+          </el-button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 添加/编辑项目对话框 -->
+    <el-dialog :title="editingProject ? '编辑项目' : '添加项目'"
+               :visible.sync="showAddDialog"
+               width="500px">
+      <el-form :model="projectForm" label-width="100px">
+        <el-form-item label="项目名称" required>
+          <el-input v-model="projectForm.name" placeholder="例如：双眼皮手术"></el-input>
+        </el-form-item>
+        <el-form-item label="项目分类">
+          <el-select v-model="projectForm.category" placeholder="选择分类" style="width: 100%;">
+            <el-option v-for="cat in categories" :key="cat" :label="cat" :value="cat"></el-option>
+            <el-option label="+ 新建分类" value="__new__"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="新分类名称" v-if="projectForm.category === '__new__'">
+          <el-input v-model="projectForm.newCategory" placeholder="输入新分类名称"></el-input>
+        </el-form-item>
+      </el-form>
+      <div slot="footer">
+        <el-button @click="showAddDialog = false">取消</el-button>
+        <el-button type="primary" @click="saveProject">确定</el-button>
+      </div>
+    </el-dialog>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/element-ui@2.15.14/lib/index.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios@0.27.2/dist/axios.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+  <script>
+    new Vue({
+      el: '#app',
+      data: {
+        projects: [],
+        categories: [],
+        showAddDialog: false,
+        projectForm: {
+          name: '',
+          category: '',
+          newCategory: ''
+        },
+        editingProject: null,
+        lastUpdateTime: '-',
+        draggedItem: null
+      },
+      computed: {
+        sortedProjects() {
+          return [...this.projects].sort((a, b) => a.order - b.order);
+        }
+      },
+      mounted() {
+        this.checkAuth();
+        this.loadProjects();
+        this.initSortable();
+      },
+      methods: {
+        checkAuth() {
+          const token = localStorage.getItem('adminToken');
+          if (!token) {
+            this.$message.error('请先登录');
+            setTimeout(() => {
+              window.location.href = '/admin/login.html';
+            }, 1500);
+          }
+        },
+
+        async loadProjects() {
+          try {
+            const response = await axios.get('/api/config/projects');
+            if (response.data.success) {
+              this.projects = response.data.data.projects || [];
+              this.categories = response.data.data.categories || [];
+              const lastUpdated = response.data.data.lastUpdated;
+              if (lastUpdated) {
+                const date = new Date(lastUpdated);
+                this.lastUpdateTime = date.toLocaleDateString('zh-CN');
+              }
+            }
+          } catch (error) {
+            console.error('加载项目失败:', error);
+            this.$message.error('加载项目失败');
+          }
+        },
+
+        editProject(project) {
+          this.editingProject = project;
+          this.projectForm = {
+            name: project.name,
+            category: project.category,
+            newCategory: ''
+          };
+          this.showAddDialog = true;
+        },
+
+        async saveProject() {
+          if (!this.projectForm.name) {
+            this.$message.error('请输入项目名称');
+            return;
+          }
+
+          let category = this.projectForm.category;
+          if (category === '__new__') {
+            category = this.projectForm.newCategory;
+            if (!category) {
+              this.$message.error('请输入新分类名称');
+              return;
+            }
+          }
+
+          try {
+            if (this.editingProject) {
+              // 编辑现有项目
+              const index = this.projects.findIndex(p => p.id === this.editingProject.id);
+              if (index !== -1) {
+                this.projects[index] = {
+                  ...this.editingProject,
+                  name: this.projectForm.name,
+                  category: category
+                };
+              }
+
+              // 保存到后端
+              await axios.post('/api/config/projects', {
+                projects: this.projects,
+                categories: this.categories
+              });
+
+              this.$message.success('项目更新成功');
+            } else {
+              // 添加新项目
+              const response = await axios.post('/api/config/projects/add', {
+                name: this.projectForm.name,
+                category: category
+              });
+
+              if (response.data.success) {
+                this.$message.success('项目添加成功');
+                this.loadProjects();
+              }
+            }
+
+            this.showAddDialog = false;
+            this.resetForm();
+          } catch (error) {
+            console.error('保存项目失败:', error);
+            this.$message.error(error.response?.data?.message || '保存项目失败');
+          }
+        },
+
+        async deleteProject(project) {
+          try {
+            await this.$confirm(`确定要删除"${project.name}"吗？`, '提示', {
+              confirmButtonText: '确定',
+              cancelButtonText: '取消',
+              type: 'warning'
+            });
+
+            const response = await axios.delete(`/api/config/projects/${project.id}`);
+            if (response.data.success) {
+              this.$message.success('删除成功');
+              this.loadProjects();
+            }
+          } catch (error) {
+            if (error !== 'cancel') {
+              console.error('删除失败:', error);
+              this.$message.error('删除失败');
+            }
+          }
+        },
+
+        async saveOrder() {
+          try {
+            const projectIds = this.sortedProjects.map(p => p.id);
+            const response = await axios.put('/api/config/projects/reorder', {
+              projectIds: projectIds
+            });
+
+            if (response.data.success) {
+              this.$message.success('排序保存成功');
+              this.loadProjects();
+            }
+          } catch (error) {
+            console.error('保存排序失败:', error);
+            this.$message.error('保存排序失败');
+          }
+        },
+
+        resetForm() {
+          this.projectForm = {
+            name: '',
+            category: '',
+            newCategory: ''
+          };
+          this.editingProject = null;
+        },
+
+        // 拖拽排序
+        initSortable() {
+          const el = document.getElementById('projectList');
+          if (el) {
+            new Sortable(el, {
+              animation: 150,
+              handle: '.drag-handle',
+              onEnd: (evt) => {
+                const item = this.projects[evt.oldIndex];
+                this.projects.splice(evt.oldIndex, 1);
+                this.projects.splice(evt.newIndex, 0, item);
+
+                // 更新order值
+                this.projects.forEach((p, index) => {
+                  p.order = index + 1;
+                });
+              }
+            });
+          }
+        },
+
+        // 原生拖拽支持（备用）
+        handleDragStart(e) {
+          this.draggedItem = e.target;
+          e.target.classList.add('dragging');
+        },
+
+        handleDragOver(e) {
+          e.preventDefault();
+        },
+
+        handleDrop(e) {
+          e.preventDefault();
+          if (e.target.classList.contains('project-item') && e.target !== this.draggedItem) {
+            const draggedId = this.draggedItem.dataset.id;
+            const targetId = e.target.dataset.id;
+
+            const draggedIndex = this.projects.findIndex(p => p.id === draggedId);
+            const targetIndex = this.projects.findIndex(p => p.id === targetId);
+
+            if (draggedIndex !== -1 && targetIndex !== -1) {
+              const [removed] = this.projects.splice(draggedIndex, 1);
+              this.projects.splice(targetIndex, 0, removed);
+
+              // 更新order值
+              this.projects.forEach((p, index) => {
+                p.order = index + 1;
+              });
+            }
+          }
+        },
+
+        handleDragEnd(e) {
+          e.target.classList.remove('dragging');
+          this.draggedItem = null;
+        },
+
+        logout() {
+          localStorage.removeItem('adminToken');
+          window.location.href = '/admin/login.html';
+        }
+      }
+    });
+  </script>
+</body>
+</html>
