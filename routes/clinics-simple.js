@@ -97,7 +97,11 @@ router.get('/featured', async (req, res) => {
  */
 router.get('/:id', async (req, res) => {
   try {
-    const clinic = clinicsStore.find(c => c._id === req.params.id);
+    // 同时支持 _id 和 id 的查找
+    const clinic = clinicsStore.find(c =>
+      c._id === req.params.id ||
+      c.id === req.params.id
+    );
 
     if (!clinic) {
       return res.status(404).json({
