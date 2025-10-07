@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const User = require('../models/User');
+const Config = require('../models/Config');
 const { requireAdmin } = require('../middleware/auth');
 const { getAllAdminIds, addAdmin, removeAdmin } = require('../config/admin');
 
@@ -164,6 +165,94 @@ router.get('/stats', requireAdmin, async (req, res) => {
     res.status(500).json({
       success: false,
       message: '获取统计信息失败'
+    });
+  }
+});
+
+/**
+ * 切换应用运行模式（管理员接口）
+ * POST /api/admin/switch-mode
+ *
+ * Body: { mode: 'review' | 'production' }
+ */
+router.post('/switch-mode', requireAdmin, async (req, res) => {
+  const { mode } = req.body;
+
+  // 验证模式值
+  if (!mode || !['review', 'production'].includes(mode)) {
+    return res.status(400).json({
+      success: false,
+      message: '无效的模式值，必须是 review 或 production'
+    });
+  }
+
+  try {
+    // 查找或创建模式配置
+    let modeConfig = await Config.findOne({
+      type: 'app_mode'
+    });
+
+    if (!modeConfig) {
+      // 创建新配置
+      modeConfig = new Config({
+        type: 'app_mode',
+        name: '应用运行模式',
+        description: '控制小程序显示杭州数据(review)还是韩国医美数据(production)',
+        content: { mode: mode },
+        isActive: true
+      });
+    } else {
+      // 更新现有配置
+      modeConfig.content = { mode: mode };
+      modeConfig.isActive = true;
+      modeConfig.updatedAt = new Date();
+    }
+
+    await modeConfig.save();
+
+    console.log(`[模式切换] 管理员 ${req.user?.openId} 切换模式: ${mode}`);
+
+    res.json({
+      success: true,
+      message: `已切换到${mode === 'review' ? '审核' : '生产'}模式`,
+      mode: mode,
+      note: mode === 'review'
+        ? '小程序将显示杭州本地服务数据'
+        : '小程序将显示韩国医美数据（最多10分钟生效）'
+    });
+  } catch (error) {
+    console.error('切换模式失败:', error);
+    res.status(500).json({
+      success: false,
+      message: '切换模式失败: ' + error.message
+    });
+  }
+});
+
+/**
+ * 获取当前模式配置（管理员接口）
+ * GET /api/admin/current-mode
+ */
+router.get('/current-mode', requireAdmin, async (req, res) => {
+  try {
+    const modeConfig = await Config.findOne({
+      type: 'app_mode',
+      isActive: true
+    });
+
+    const mode = modeConfig?.content?.mode || process.env.APP_MODE || 'review';
+
+    res.json({
+      success: true,
+      mode: mode,
+      source: modeConfig ? 'database' : 'environment',
+      updatedAt: modeConfig?.updatedAt
+    });
+  } catch (error) {
+    console.error('获取当前模式失败:', error);
+    res.status(500).json({
+      success: false,
+      message: '获取当前模式失败'
     });
   }
 });

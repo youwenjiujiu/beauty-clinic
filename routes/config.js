@@ -3,6 +3,56 @@ const Config = require('../models/Config');
 const SearchHistory = require('../models/SearchHistory');
 
 /**
+ * 获取应用运行模式（公开接口）
+ * GET /api/config/mode
+ *
+ * 返回值：
+ * - review: 审核模式，显示杭州本地服务数据
+ * - production: 生产模式，显示韩国医美数据
+ */
+router.get('/mode', async (req, res) => {
+  try {
+    // 方法1：从数据库获取配置
+    const modeConfig = await Config.findOne({
+      type: 'app_mode',
+      isActive: true
+    });
+
+    let mode = 'review'; // 默认审核模式（安全第一）
+
+    if (modeConfig && modeConfig.content && modeConfig.content.mode) {
+      mode = modeConfig.content.mode;
+    } else {
+      // 方法2：从环境变量获取
+      mode = process.env.APP_MODE || 'review';
+    }
+
+    // 验证模式值
+    if (!['review', 'production'].includes(mode)) {
+      mode = 'review'; // 无效值时默认审核模式
+    }
+
+    console.log(`[模式查询] 当前模式: ${mode}`);
+
+    res.json({
+      success: true,
+      mode: mode,
+      message: mode === 'review' ? '当前为审核模式' : '当前为生产模式',
+      timestamp: Date.now()
+    });
+  } catch (error) {
+    console.error('获取模式配置失败:', error);
+    // 出错时返回安全的审核模式
+    res.json({
+      success: true,
+      mode: 'review',
+      message: '配置加载失败，使用审核模式',
+      timestamp: Date.now()
+    });
+  }
+});
+
+/**
  * 获取热门搜索（公开接口）
  * GET /api/config/hot-searches
  */
