@@ -222,21 +222,63 @@ const districtsData = [
 /**
  * 获取筛选选项（公开接口，小程序用）
  * GET /api/config/filter-options
+ *
+ * 根据模式返回不同数据：
+ * - review: 返回通用区域数据
+ * - production: 返回韩国区域数据
  */
 router.get('/filter-options', async (req, res) => {
   try {
+    const mode = process.env.APP_MODE || 'production';
+
+    let districts = [];
+    let priceRanges = [];
+
+    if (mode === 'review') {
+      // 审核模式：通用区域
+      districts = [
+        {
+          value: 'area1',
+          label: '中心区',
+          children: [
+            { value: 'center1', label: '商务中心' },
+            { value: 'center2', label: '文化中心' }
+          ]
+        },
+        {
+          value: 'area2',
+          label: '东区',
+          children: [
+            { value: 'east1', label: '科技园区' },
+            { value: 'east2', label: '教育区' }
+          ]
+        }
+      ];
+
+      priceRanges = [
+        { value: '0-100', label: '100元以下' },
+        { value: '100-300', label: '100-300元' },
+        { value: '300-500', label: '300-500元' },
+        { value: '500+', label: '500元以上' }
+      ];
+    } else {
+      // 生产模式：韩国区域
+      districts = districtsData;
+      priceRanges = [
+        { value: '0-100', label: '100万韩元以下' },
+        { value: '100-300', label: '100-300万韩元' },
+        { value: '300-500', label: '300-500万韩元' },
+        { value: '500+', label: '500万韩元以上' }
+      ];
+    }
+
     res.json({
       success: true,
       data: {
-        districts: districtsData,
+        districts: districts,
         services: specialtiesData.map(s => ({ value: s.id, label: s.name })),
         specialties: specialtiesData,
-        priceRanges: [
-          { value: '0-100', label: '100万韩元以下' },
-          { value: '100-300', label: '100-300万韩元' },
-          { value: '300-500', label: '300-500万韩元' },
-          { value: '500+', label: '500万韩元以上' }
-        ]
+        priceRanges: priceRanges
       }
     });
   } catch (error) {
