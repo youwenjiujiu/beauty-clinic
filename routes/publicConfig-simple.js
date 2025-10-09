@@ -11,7 +11,8 @@ const router = require('express').Router();
 router.get('/mode', async (req, res) => {
   try {
     // 从环境变量获取模式（Vercel环境变量）
-    let mode = process.env.APP_MODE || 'review';
+    // 审核通过后默认使用 production 模式
+    let mode = process.env.APP_MODE || 'production';
 
     // 验证模式值
     if (!['review', 'production'].includes(mode)) {
