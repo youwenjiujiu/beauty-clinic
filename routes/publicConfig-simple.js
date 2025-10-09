@@ -39,6 +39,105 @@ router.get('/mode', async (req, res) => {
   }
 });
 
+/**
+ * 获取文案映射配置（公开接口）
+ * GET /api/config/texts
+ *
+ * 根据当前模式返回不同的文案
+ * - review模式：返回空对象（使用前端默认文案）
+ * - production模式：返回实际业务文案
+ */
+router.get('/texts', async (req, res) => {
+  try {
+    const mode = process.env.APP_MODE || 'production';
+
+    if (mode === 'review') {
+      // 审核模式：返回空配置，使用前端默认文案
+      res.json({
+        success: true,
+        data: {},
+        message: '使用默认文案'
+      });
+      return;
+    }
+
+    // 生产模式：返回实际业务文案
+    const productionTexts = {
+      // 机构相关
+      institution: '诊所',
+      institutions: '诊所',
+      clinic: '诊所',
+      clinics: '诊所',
+      hospital: '医院',
+
+      // 专业人员
+      doctor: '医生',
+      doctors: '医生团队',
+      professional: '医疗工作者',
+      consultant: '面诊医生',
+
+      // 服务相关
+      medical: '医美',
+      surgery: '整形手术',
+      treatment: '治疗项目',
+      consultation: '面诊',
+      appointment: '预约',
+
+      // 地区相关
+      country: '韩国',
+      city: '首尔',
+      district: '区域',
+      area: '地区',
+
+      // 分类相关
+      beauty: '医美',
+      cosmetic: '整形',
+      aesthetic: '美容国',
+
+      // 具体服务
+      eyes: '双眼皮',
+      nose: '隆鼻',
+      face: '轮廓',
+      skin: '皮肤管理',
+      plastic: '整形手术',
+      injection: '注射',
+      laser: '激光治疗',
+      body: '身体塑形',
+      antiaging: '抗衰老',
+
+      // 货币
+      currency: '韩元',
+      priceUnit: '万韩元',
+
+      // 操作
+      book: '预约',
+      consult: '面诊',
+      compare: '对比',
+      search: '搜索',
+
+      // 页面文案
+      searchPlaceholder: '搜索诊所、医生、项目...',
+      loadingText: '加载中...',
+      emptyText: '暂无诊所',
+      retryText: '重试',
+    };
+
+    res.json({
+      success: true,
+      data: productionTexts,
+      message: '文案配置加载成功'
+    });
+
+  } catch (error) {
+    console.error('获取文案配置失败:', error);
+    res.json({
+      success: true,
+      data: {}, // 失败时返回空对象，使用默认文案
+      message: '配置加载失败'
+    });
+  }
+});
+
 // 专科分类数据（可动态修改）
 let specialtiesData = [
   { id: 'skin', name: '皮肤管理', icon: '🧴', order: 1 },
