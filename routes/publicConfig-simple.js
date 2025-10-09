@@ -233,9 +233,11 @@ router.get('/filter-options', async (req, res) => {
 
     let districts = [];
     let priceRanges = [];
+    let city = '';
 
     if (mode === 'review') {
       // 审核模式：通用区域
+      city = '本地';
       districts = [
         {
           value: 'area1',
@@ -263,6 +265,7 @@ router.get('/filter-options', async (req, res) => {
       ];
     } else {
       // 生产模式：韩国区域
+      city = '首尔';
       districts = districtsData;
       priceRanges = [
         { value: '0-100', label: '100万韩元以下' },
@@ -275,6 +278,7 @@ router.get('/filter-options', async (req, res) => {
     res.json({
       success: true,
       data: {
+        city: city,
         districts: districts,
         services: specialtiesData.map(s => ({ value: s.id, label: s.name })),
         specialties: specialtiesData,
