@@ -518,6 +518,7 @@ const app = createApp({
       this.editingClinic = {
         name: '',
         nameKr: '',
+        logo: '',
         district: '',
         address: '',
         phone: '',

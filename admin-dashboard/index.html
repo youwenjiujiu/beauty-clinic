@@ -525,6 +525,12 @@
             </div>
 
             <div>
+              <label class="block text-sm font-medium mb-1">Logo图片URL</label>
+              <input v-model="editingClinic.logo" class="w-full border rounded px-3 py-2" placeholder="输入图片URL地址">
+              <p class="text-xs text-gray-500 mt-1">提示：可以使用图床上传图片后获取URL，如 https://i.imgur.com/xxx.jpg</p>
+            </div>
+
+            <div>
               <label class="block text-sm font-medium mb-1">地区</label>
               <select v-model="editingClinic.district" class="w-full border rounded px-3 py-2">
                 <option value="">请选择</option>
