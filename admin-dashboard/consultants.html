@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>陪同顾问管理 - 嘟嘟预约通</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+  <div id="app">
+    <!-- 顶部导航 -->
+    <nav class="bg-white shadow-lg mb-6">
+      <div class="max-w-7xl mx-auto px-4">
+        <div class="flex justify-between h-16">
+          <div class="flex items-center">
+            <a href="index.html" class="text-blue-500 mr-4">← 返回</a>
+            <h1 class="text-xl font-bold">陪同顾问管理</h1>
+          </div>
+          <div class="flex items-center space-x-4">
+            <button @click="loadConsultants" class="bg-blue-500 text-white px-4 py-2 rounded">刷新</button>
+            <button @click="openAddDialog" class="bg-green-500 text-white px-4 py-2 rounded">添加顾问</button>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4">
+      <!-- 顾问列表 -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div v-for="consultant in consultants" :key="consultant._id" class="bg-white rounded-lg shadow-lg p-6">
+          <!-- 头像和基本信息 -->
+          <div class="flex items-start mb-4">
+            <img v-if="consultant.avatar" :src="consultant.avatar" class="w-20 h-20 rounded-full object-cover mr-4" />
+            <div v-else class="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center mr-4">
+              <span class="text-2xl">👤</span>
+            </div>
+            <div class="flex-1">
+              <div class="flex items-center mb-1">
+                <h3 class="text-xl font-bold">{{ consultant.name }}</h3>
+                <span v-if="consultant.nameKr" class="text-gray-500 ml-2">({{ consultant.nameKr }})</span>
+              </div>
+              <div class="flex items-center mb-2">
+                <span class="text-yellow-500">★</span>
+                <span class="ml-1 font-semibold">{{ consultant.rating }}</span>
+                <span class="text-gray-500 text-sm ml-2">({{ consultant.reviewCount || 0 }}条评价)</span>
+              </div>
+              <div class="flex flex-wrap gap-1">
+                <span v-for="tag in consultant.tags" :key="tag" class="bg-blue-100 text-blue-600 text-xs px-2 py-1 rounded">
+                  {{ tag }}
+                </span>
+                <span v-if="consultant.featured" class="bg-red-100 text-red-600 text-xs px-2 py-1 rounded">
+                  推荐
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 详细信息 -->
+          <div class="space-y-2 text-sm mb-4">
+            <div class="flex">
+              <span class="text-gray-600 w-20">性别:</span>
+              <span>{{ getGenderText(consultant.gender) }}</span>
+            </div>
+            <div class="flex">
+              <span class="text-gray-600 w-20">经验:</span>
+              <span>{{ consultant.experience }}年</span>
+            </div>
+            <div class="flex">
+              <span class="text-gray-600 w-20">语言:</span>
+              <span>{{ (consultant.languages || []).join('、') }}</span>
+            </div>
+            <div class="flex">
+              <span class="text-gray-600 w-20">专长:</span>
+              <span>{{ (consultant.specialties || []).join('、') }}</span>
+            </div>
+            <div class="flex">
+              <span class="text-gray-600 w-20">服务区域:</span>
+              <span>{{ (consultant.serviceAreas || []).join('、') }}</span>
+            </div>
+            <div class="flex">
+              <span class="text-gray-600 w-20">联系方式:</span>
+              <span>{{ consultant.phone }}</span>
+            </div>
+            <div class="flex">
+              <span class="text-gray-600 w-20">微信:</span>
+              <span>{{ consultant.wechat }}</span>
+            </div>
+            <div class="flex">
+              <span class="text-gray-600 w-20">费用:</span>
+              <span>咨询¥{{ consultant.consultationFee || 0 }} / 陪同¥{{ consultant.accompanyFee || 0 }}</span>
+            </div>
+            <div class="flex">
+              <span class="text-gray-600 w-20">状态:</span>
+              <span :class="getStatusClass(consultant.status)">
+                {{ getStatusText(consultant.status) }}
+              </span>
+            </div>
+          </div>
+
+          <!-- 简介 -->
+          <div class="mb-4 p-3 bg-gray-50 rounded text-sm">
+            <div class="text-gray-700 mb-2">{{ consultant.introduction }}</div>
+            <div v-if="consultant.introductionKr" class="text-gray-600 text-xs">
+              {{ consultant.introductionKr }}
+            </div>
+          </div>
+
+          <!-- 操作按钮 -->
+          <div class="flex space-x-2">
+            <button @click="editConsultant(consultant)" class="flex-1 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+              编辑
+            </button>
+            <button @click="deleteConsultant(consultant._id)" class="flex-1 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
+              删除
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 空状态 -->
+      <div v-if="consultants.length === 0" class="text-center py-20">
+        <p class="text-gray-500 text-lg mb-4">暂无顾问数据</p>
+        <button @click="openAddDialog" class="bg-green-500 text-white px-6 py-3 rounded">添加第一个顾问</button>
+      </div>
+    </div>
+
+    <!-- 编辑/添加对话框 -->
+    <div v-if="showDialog" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" @click="closeDialog">
+      <div class="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-screen overflow-y-auto" @click.stop>
+        <h2 class="text-2xl font-bold mb-6">{{ isEdit ? '编辑顾问' : '添加顾问' }}</h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- 基本信息 -->
+          <div>
+            <label class="block text-sm font-medium mb-1">姓名（中文）*</label>
+            <input v-model="formData.name" class="w-full border rounded px-3 py-2" placeholder="请输入中文姓名">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">姓名（韩文）</label>
+            <input v-model="formData.nameKr" class="w-full border rounded px-3 py-2" placeholder="请输入韩文姓名">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">电话</label>
+            <input v-model="formData.phone" class="w-full border rounded px-3 py-2" placeholder="010-1234-5678">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">微信号*</label>
+            <input v-model="formData.wechat" class="w-full border rounded px-3 py-2" placeholder="微信号">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">KakaoTalk</label>
+            <input v-model="formData.kakaoTalk" class="w-full border rounded px-3 py-2" placeholder="KakaoTalk ID">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">性别</label>
+            <select v-model="formData.gender" class="w-full border rounded px-3 py-2">
+              <option value="female">女</option>
+              <option value="male">男</option>
+              <option value="other">其他</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">从业年限</label>
+            <input v-model.number="formData.experience" type="number" class="w-full border rounded px-3 py-2" placeholder="年">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">评分</label>
+            <input v-model.number="formData.rating" type="number" step="0.1" max="5" class="w-full border rounded px-3 py-2">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">咨询费（元）</label>
+            <input v-model.number="formData.consultationFee" type="number" class="w-full border rounded px-3 py-2">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">陪同费（元）</label>
+            <input v-model.number="formData.accompanyFee" type="number" class="w-full border rounded px-3 py-2">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">状态</label>
+            <select v-model="formData.status" class="w-full border rounded px-3 py-2">
+              <option value="active">在线</option>
+              <option value="busy">忙碌</option>
+              <option value="vacation">休假</option>
+              <option value="inactive">离线</option>
+            </select>
+          </div>
+          <div>
+            <label class="flex items-center">
+              <input type="checkbox" v-model="formData.featured" class="mr-2">
+              <span class="text-sm font-medium">推荐顾问</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 语言能力 -->
+        <div class="mt-4">
+          <label class="block text-sm font-medium mb-1">语言能力（逗号分隔）</label>
+          <input v-model="languagesStr" class="w-full border rounded px-3 py-2" placeholder="中文,韩语,英语">
+        </div>
+
+        <!-- 专长领域 -->
+        <div class="mt-4">
+          <label class="block text-sm font-medium mb-1">专长领域（逗号分隔）</label>
+          <input v-model="specialtiesStr" class="w-full border rounded px-3 py-2" placeholder="医美咨询,整形咨询">
+        </div>
+
+        <!-- 服务区域 -->
+        <div class="mt-4">
+          <label class="block text-sm font-medium mb-1">服务区域（逗号分隔）</label>
+          <input v-model="serviceAreasStr" class="w-full border rounded px-3 py-2" placeholder="江南区,瑞草区">
+        </div>
+
+        <!-- 标签 -->
+        <div class="mt-4">
+          <label class="block text-sm font-medium mb-1">标签（逗号分隔）</label>
+          <input v-model="tagsStr" class="w-full border rounded px-3 py-2" placeholder="资深顾问,双语服务">
+        </div>
+
+        <!-- 中文简介 -->
+        <div class="mt-4">
+          <label class="block text-sm font-medium mb-1">简介（中文）</label>
+          <textarea v-model="formData.introduction" class="w-full border rounded px-3 py-2" rows="3"></textarea>
+        </div>
+
+        <!-- 韩文简介 -->
+        <div class="mt-4">
+          <label class="block text-sm font-medium mb-1">简介（韩文）</label>
+          <textarea v-model="formData.introductionKr" class="w-full border rounded px-3 py-2" rows="3"></textarea>
+        </div>
+
+        <!-- 操作按钮 -->
+        <div class="mt-6 flex justify-end space-x-3">
+          <button @click="closeDialog" class="px-6 py-2 border rounded hover:bg-gray-50">取消</button>
+          <button @click="saveConsultant" class="px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">保存</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.3.0/dist/vue.global.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.5.0/dist/axios.min.js"></script>
+  <script>
+    const { createApp } = Vue;
+
+    createApp({
+      data() {
+        return {
+          consultants: [],
+          showDialog: false,
+          isEdit: false,
+          formData: {
+            name: '',
+            nameKr: '',
+            phone: '',
+            wechat: '',
+            kakaoTalk: '',
+            avatar: '',
+            gender: 'female',
+            languages: [],
+            specialties: [],
+            experience: 0,
+            serviceAreas: [],
+            serviceTypes: [],
+            introduction: '',
+            introductionKr: '',
+            rating: 5.0,
+            reviewCount: 0,
+            totalServices: 0,
+            consultationFee: 0,
+            accompanyFee: 0,
+            status: 'active',
+            featured: false,
+            tags: []
+          },
+          languagesStr: '',
+          specialtiesStr: '',
+          serviceAreasStr: '',
+          tagsStr: '',
+          editingId: null
+        };
+      },
+      mounted() {
+        this.loadConsultants();
+      },
+      methods: {
+        async loadConsultants() {
+          try {
+            const res = await axios.get('/api/consultants');
+            if (res.data.success) {
+              this.consultants = res.data.data;
+            }
+          } catch (error) {
+            console.error('加载顾问列表失败:', error);
+            alert('加载顾问列表失败');
+          }
+        },
+        openAddDialog() {
+          this.isEdit = false;
+          this.resetForm();
+          this.showDialog = true;
+        },
+        editConsultant(consultant) {
+          this.isEdit = true;
+          this.editingId = consultant._id;
+          this.formData = { ...consultant };
+          this.languagesStr = (consultant.languages || []).join(',');
+          this.specialtiesStr = (consultant.specialties || []).join(',');
+          this.serviceAreasStr = (consultant.serviceAreas || []).join(',');
+          this.tagsStr = (consultant.tags || []).join(',');
+          this.showDialog = true;
+        },
+        closeDialog() {
+          this.showDialog = false;
+          this.resetForm();
+        },
+        resetForm() {
+          this.formData = {
+            name: '',
+            nameKr: '',
+            phone: '',
+            wechat: '',
+            kakaoTalk: '',
+            avatar: '',
+            gender: 'female',
+            languages: [],
+            specialties: [],
+            experience: 0,
+            serviceAreas: [],
+            serviceTypes: [],
+            introduction: '',
+            introductionKr: '',
+            rating: 5.0,
+            reviewCount: 0,
+            totalServices: 0,
+            consultationFee: 0,
+            accompanyFee: 0,
+            status: 'active',
+            featured: false,
+            tags: []
+          };
+          this.languagesStr = '';
+          this.specialtiesStr = '';
+          this.serviceAreasStr = '';
+          this.tagsStr = '';
+          this.editingId = null;
+        },
+        async saveConsultant() {
+          // 验证必填项
+          if (!this.formData.name || !this.formData.wechat) {
+            alert('请填写姓名和微信号');
+            return;
+          }
+
+          // 处理数组字段
+          this.formData.languages = this.languagesStr.split(',').map(s => s.trim()).filter(s => s);
+          this.formData.specialties = this.specialtiesStr.split(',').map(s => s.trim()).filter(s => s);
+          this.formData.serviceAreas = this.serviceAreasStr.split(',').map(s => s.trim()).filter(s => s);
+          this.formData.tags = this.tagsStr.split(',').map(s => s.trim()).filter(s => s);
+
+          try {
+            let res;
+            if (this.isEdit) {
+              res = await axios.put(`/api/consultants/${this.editingId}`, this.formData);
+            } else {
+              res = await axios.post('/api/consultants', this.formData);
+            }
+
+            if (res.data.success) {
+              alert(this.isEdit ? '更新成功' : '添加成功');
+              this.closeDialog();
+              this.loadConsultants();
+            } else {
+              alert(res.data.message || '保存失败');
+            }
+          } catch (error) {
+            console.error('保存顾问失败:', error);
+            alert('保存失败');
+          }
+        },
+        async deleteConsultant(id) {
+          if (!confirm('确定要删除这个顾问吗？')) {
+            return;
+          }
+
+          try {
+            const res = await axios.delete(`/api/consultants/${id}`);
+            if (res.data.success) {
+              alert('删除成功');
+              this.loadConsultants();
+            } else {
+              alert(res.data.message || '删除失败');
+            }
+          } catch (error) {
+            console.error('删除顾问失败:', error);
+            alert('删除失败');
+          }
+        },
+        getGenderText(gender) {
+          const map = { male: '男', female: '女', other: '其他' };
+          return map[gender] || '未知';
+        },
+        getStatusText(status) {
+          const map = { active: '在线', busy: '忙碌', vacation: '休假', inactive: '离线' };
+          return map[status] || status;
+        },
+        getStatusClass(status) {
+          const map = {
+            active: 'text-green-600',
+            busy: 'text-orange-600',
+            vacation: 'text-blue-600',
+            inactive: 'text-gray-600'
+          };
+          return map[status] || 'text-gray-600';
+        }
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>
