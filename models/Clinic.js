@@ -15,6 +15,7 @@ const clinicSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  addressKr: String, // 韩文地址
   city: {
     type: String,
     default: '首尔'
@@ -66,6 +67,38 @@ const clinicSchema = new mongoose.Schema({
     duration: Number // 分钟
   }],
 
+  // 价格明细（医院菜单）
+  priceMenu: [{
+    category: String, // 分类：眼部、鼻部等
+    items: [{
+      name: String, // 项目名称
+      nameKr: String, // 韩文名称
+      price: String, // 价格（可以是范围）
+      description: String, // 说明
+      unit: String // 单位：次、疗程等
+    }]
+  }],
+
+  // 经验分享（用户反馈）
+  experiences: [{
+    userId: String,
+    userName: String,
+    userAvatar: String,
+    content: String,
+    rating: Number,
+    images: [String],
+    date: Date,
+    verified: Boolean // 是否已验证
+  }],
+
+  // 店铺信息图片
+  shopImages: [{
+    url: String,
+    category: String, // 'exterior', 'interior', 'equipment', 'result', 'doctor', 'environment'
+    description: String,
+    descriptionKr: String
+  }],
+
   // 医生团队
   doctors: [{
     name: String,
@@ -113,6 +146,12 @@ const clinicSchema = new mongoose.Schema({
   // 评分和统计
   rating: {
     type: Number,
+    default: 0,
+    min: 0,
+    max: 5
+  },
+  naverRating: {
+    type: Number, // Naver地图评分
     default: 0,
     min: 0,
     max: 5
