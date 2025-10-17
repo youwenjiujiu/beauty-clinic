@@ -20,6 +20,7 @@ const app = createApp({
         { id: 'hot_searches', name: '热门搜索管理' },
         { id: 'filter_options', name: '筛选选项管理' },
         { id: 'clinics', name: '诊所管理' },
+        { id: 'consultants', name: '陪同顾问管理' },
         { id: 'banners', name: '轮播图管理' },
         { id: 'services', name: '服务项目管理' },
         { id: 'appointments', name: '预约管理' },
@@ -51,6 +52,11 @@ const app = createApp({
         priceRange: '中档',
         featured: false
       },
+
+      // 陪同顾问管理
+      consultants: [],
+      showConsultantModal: false,
+      editingConsultant: null,
 
       // 轮播图
       banners: [],
@@ -601,6 +607,103 @@ const app = createApp({
       }
     },
 
+    // ========== 陪同顾问管理 ==========
+    async loadConsultants() {
+      try {
+        const result = await this.apiRequest('GET', '/consultants');
+        if (result.success && result.data) {
+          this.consultants = result.data;
+        }
+      } catch (error) {
+        console.error('加载顾问列表失败:', error);
+        this.consultants = [];
+      }
+    },
+
+    addConsultant() {
+      this.editingConsultant = {
+        name: '',
+        nameKr: '',
+        phone: '',
+        wechat: '',
+        kakaoTalk: '',
+        gender: 'female',
+        languages: [],
+        specialties: [],
+        experience: 0,
+        serviceAreas: [],
+        introduction: '',
+        introductionKr: '',
+        rating: 5.0,
+        consultationFee: 0,
+        accompanyFee: 0,
+        status: 'active',
+        featured: false,
+        tags: []
+      };
+      this.showConsultantModal = true;
+    },
+
+    editConsultant(consultant) {
+      this.editingConsultant = { ...consultant };
+      this.showConsultantModal = true;
+    },
+
+    async saveConsultant() {
+      if (!this.editingConsultant.name || !this.editingConsultant.wechat) {
+        alert('请填写姓名和微信号');
+        return;
+      }
+
+      try {
+        const isEdit = !!this.editingConsultant._id;
+        const url = isEdit ? `/consultants/${this.editingConsultant._id}` : '/consultants';
+        const method = isEdit ? 'PUT' : 'POST';
+
+        const result = await this.apiRequest(method, url, this.editingConsultant);
+        if (result.success) {
+          this.showConsultantModal = false;
+          this.editingConsultant = null;
+          alert(isEdit ? '更新成功！' : '添加成功！');
+          this.loadConsultants();
+        }
+      } catch (error) {
+        console.error('保存顾问失败:', error);
+        alert('保存失败');
+      }
+    },
+
+    async deleteConsultant(consultantId) {
+      if (!confirm('确定要删除该顾问吗？')) {
+        return;
+      }
+
+      try {
+        const result = await this.apiRequest('DELETE', `/consultants/${consultantId}`);
+        if (result.success) {
+          this.consultants = this.consultants.filter(c => c._id !== consultantId);
+          alert('删除成功！');
+        }
+      } catch (error) {
+        console.error('删除失败:', error);
+      }
+    },
+
+    getConsultantStatusText(status) {
+      const map = { active: '在线', busy: '忙碌', vacation: '休假', inactive: '离线' };
+      return map[status] || status;
+    },
+
+    getConsultantStatusClass(status) {
+      const map = {
+        active: 'text-green-600',
+        busy: 'text-orange-600',
+        vacation: 'text-blue-600',
+        inactive: 'text-gray-600'
+      };
+      return map[status] || 'text-gray-600';
+    },
+
     // 加载轮播图
     async loadBanners() {
       try {
@@ -1041,6 +1144,9 @@ const app = createApp({
           break;
         case 'clinics':
           this.loadClinics();
+          break;
+        case 'consultants':
+          this.loadConsultants();
           break;
         case 'banners':
           this.loadBanners();

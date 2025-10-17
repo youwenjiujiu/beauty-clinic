@@ -196,6 +196,74 @@
             </table>
           </div>
 
+          <!-- 陪同顾问管理 -->
+          <div v-if="activeMenu === 'consultants'" class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-2xl font-bold mb-6">陪同顾问管理</h2>
+
+            <div class="mb-4">
+              <button @click="addConsultant" class="bg-green-500 text-white px-4 py-2 rounded">添加顾问</button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div v-for="consultant in consultants" :key="consultant._id" class="border rounded-lg p-4 bg-white shadow">
+                <!-- 头像和基本信息 -->
+                <div class="flex items-start mb-3">
+                  <div class="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center mr-3">
+                    <span class="text-2xl">👤</span>
+                  </div>
+                  <div class="flex-1">
+                    <div class="font-bold text-lg">{{ consultant.name }}</div>
+                    <div v-if="consultant.nameKr" class="text-sm text-gray-500">{{ consultant.nameKr }}</div>
+                    <div class="flex items-center mt-1">
+                      <span class="text-yellow-500">★</span>
+                      <span class="ml-1 text-sm font-semibold">{{ consultant.rating }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 标签 -->
+                <div class="flex flex-wrap gap-1 mb-3">
+                  <span v-for="tag in consultant.tags" :key="tag" class="bg-blue-100 text-blue-600 text-xs px-2 py-1 rounded">
+                    {{ tag }}
+                  </span>
+                  <span v-if="consultant.featured" class="bg-red-100 text-red-600 text-xs px-2 py-1 rounded">
+                    推荐
+                  </span>
+                </div>
+
+                <!-- 详细信息 -->
+                <div class="text-sm space-y-1 mb-3">
+                  <div><span class="text-gray-600">经验:</span> {{ consultant.experience }}年</div>
+                  <div><span class="text-gray-600">专长:</span> {{ (consultant.specialties || []).join('、') }}</div>
+                  <div><span class="text-gray-600">区域:</span> {{ (consultant.serviceAreas || []).join('、') }}</div>
+                  <div><span class="text-gray-600">微信:</span> {{ consultant.wechat }}</div>
+                  <div>
+                    <span class="text-gray-600">状态:</span>
+                    <span :class="getConsultantStatusClass(consultant.status)">
+                      {{ getConsultantStatusText(consultant.status) }}
+                    </span>
+                  </div>
+                </div>
+
+                <!-- 操作按钮 -->
+                <div class="flex space-x-2">
+                  <button @click="editConsultant(consultant)" class="flex-1 bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600">
+                    编辑
+                  </button>
+                  <button @click="deleteConsultant(consultant._id)" class="flex-1 bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600">
+                    删除
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 空状态 -->
+            <div v-if="!consultants || consultants.length === 0" class="text-center py-20">
+              <p class="text-gray-500 text-lg mb-4">暂无顾问数据</p>
+              <button @click="addConsultant" class="bg-green-500 text-white px-6 py-3 rounded">添加第一个顾问</button>
+            </div>
+          </div>
+
           <!-- 预约管理 -->
           <div v-if="activeMenu === 'appointments'" class="bg-white rounded-lg shadow p-6">
             <h2 class="text-2xl font-bold mb-6">预约管理</h2>
@@ -651,6 +719,107 @@
           <div class="flex justify-end space-x-2 mt-6">
             <button @click="showClinicModal = false; editingClinic = null" class="px-4 py-2 border rounded">取消</button>
             <button @click="saveClinic" class="px-4 py-2 bg-blue-500 text-white rounded">保存</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 顾问编辑模态框 -->
+      <div v-if="showConsultantModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+          <h3 class="text-xl font-bold mb-4">{{ editingConsultant?._id ? '编辑顾问' : '添加顾问' }}</h3>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium mb-1">姓名（中文）*</label>
+              <input v-model="editingConsultant.name" class="w-full border rounded px-3 py-2">
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">姓名（韩文）</label>
+              <input v-model="editingConsultant.nameKr" class="w-full border rounded px-3 py-2">
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">电话</label>
+              <input v-model="editingConsultant.phone" class="w-full border rounded px-3 py-2">
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">微信号*</label>
+              <input v-model="editingConsultant.wechat" class="w-full border rounded px-3 py-2">
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">KakaoTalk</label>
+              <input v-model="editingConsultant.kakaoTalk" class="w-full border rounded px-3 py-2">
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">性别</label>
+              <select v-model="editingConsultant.gender" class="w-full border rounded px-3 py-2">
+                <option value="female">女</option>
+                <option value="male">男</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">从业年限</label>
+              <input v-model.number="editingConsultant.experience" type="number" class="w-full border rounded px-3 py-2">
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">评分（0-5）</label>
+              <input v-model.number="editingConsultant.rating" type="number" step="0.1" max="5" class="w-full border rounded px-3 py-2">
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">咨询费（元）</label>
+              <input v-model.number="editingConsultant.consultationFee" type="number" class="w-full border rounded px-3 py-2">
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">陪同费（元）</label>
+              <input v-model.number="editingConsultant.accompanyFee" type="number" class="w-full border rounded px-3 py-2">
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">状态</label>
+              <select v-model="editingConsultant.status" class="w-full border rounded px-3 py-2">
+                <option value="active">在线</option>
+                <option value="busy">忙碌</option>
+                <option value="vacation">休假</option>
+                <option value="inactive">离线</option>
+              </select>
+            </div>
+            <div class="flex items-center">
+              <input type="checkbox" v-model="editingConsultant.featured" class="mr-2">
+              <label class="text-sm font-medium">推荐顾问</label>
+            </div>
+          </div>
+
+          <div class="mt-4">
+            <label class="block text-sm font-medium mb-1">语言能力（逗号分隔）</label>
+            <input v-model="editingConsultant.languagesStr" class="w-full border rounded px-3 py-2" placeholder="中文,韩语,英语">
+          </div>
+
+          <div class="mt-4">
+            <label class="block text-sm font-medium mb-1">专长领域（逗号分隔）</label>
+            <input v-model="editingConsultant.specialtiesStr" class="w-full border rounded px-3 py-2" placeholder="医美咨询,整形咨询">
+          </div>
+
+          <div class="mt-4">
+            <label class="block text-sm font-medium mb-1">服务区域（逗号分隔）</label>
+            <input v-model="editingConsultant.serviceAreasStr" class="w-full border rounded px-3 py-2" placeholder="江南区,瑞草区">
+          </div>
+
+          <div class="mt-4">
+            <label class="block text-sm font-medium mb-1">标签（逗号分隔）</label>
+            <input v-model="editingConsultant.tagsStr" class="w-full border rounded px-3 py-2" placeholder="资深顾问,双语服务">
+          </div>
+
+          <div class="mt-4">
+            <label class="block text-sm font-medium mb-1">简介（中文）</label>
+            <textarea v-model="editingConsultant.introduction" class="w-full border rounded px-3 py-2" rows="2"></textarea>
+          </div>
+
+          <div class="mt-4">
+            <label class="block text-sm font-medium mb-1">简介（韩文）</label>
+            <textarea v-model="editingConsultant.introductionKr" class="w-full border rounded px-3 py-2" rows="2"></textarea>
+          </div>
+
+          <div class="flex justify-end space-x-2 mt-6">
+            <button @click="showConsultantModal = false; editingConsultant = null" class="px-4 py-2 border rounded">取消</button>
+            <button @click="saveConsultant" class="px-4 py-2 bg-blue-500 text-white rounded">保存</button>
           </div>
         </div>
       </div>
