@@ -285,7 +285,7 @@
       methods: {
         async loadConsultants() {
           try {
-            const res = await axios.get('/api/consultants');
+            const res = await axios.get('/api/advisors/admin/list');
             if (res.data.success) {
               this.consultants = res.data.data;
             }
@@ -360,9 +360,9 @@
           try {
             let res;
             if (this.isEdit) {
-              res = await axios.put(`/api/consultants/${this.editingId}`, this.formData);
+              res = await axios.put(`/api/advisors/update/${this.editingId}`, this.formData);
             } else {
-              res = await axios.post('/api/consultants', this.formData);
+              res = await axios.post('/api/advisors/add', this.formData);
             }
 
             if (res.data.success) {
@@ -383,7 +383,7 @@
           }
 
           try {
-            const res = await axios.delete(`/api/consultants/${id}`);
+            const res = await axios.delete(`/api/advisors/delete/${id}`);
             if (res.data.success) {
               alert('删除成功');
               this.loadConsultants();
