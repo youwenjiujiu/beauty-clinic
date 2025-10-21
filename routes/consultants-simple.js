@@ -1,7 +1,34 @@
 const router = require('express').Router();
+const fs = require('fs').promises;
+const path = require('path');
 
 // 使用内存存储（无需数据库）
 let consultantsStore = [];
+
+// 数据文件路径
+const dataFile = path.join('/tmp', 'consultants-data.json');
+
+// 从文件加载数据
+async function loadFromFile() {
+  try {
+    const data = await fs.readFile(dataFile, 'utf-8');
+    consultantsStore = JSON.parse(data);
+    console.log('加载了', consultantsStore.length, '个顾问从文件');
+  } catch (error) {
+    console.log('没有找到数据文件，使用默认数据');
+    initDefaultConsultants();
+  }
+}
+
+// 保存到文件
+async function saveToFile() {
+  try {
+    await fs.writeFile(dataFile, JSON.stringify(consultantsStore, null, 2));
+    console.log('保存了', consultantsStore.length, '个顾问到文件');
+  } catch (error) {
+    console.error('保存文件失败:', error);
+  }
+}
 
 // 初始化一些示例顾问数据
 function initDefaultConsultants() {
@@ -174,6 +201,9 @@ router.post('/', async (req, res) => {
     };
 
     consultantsStore.push(consultant);
+
+    // 保存到文件
+    await saveToFile();
 
     res.json({
       success: true,
