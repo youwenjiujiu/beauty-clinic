@@ -90,6 +90,7 @@ app.use('/api/config', require('./routes/publicConfig-simple'));
 app.use('/api/config/projects', require('./routes/projects-config'));
 app.use('/api/advisors', require('./routes/advisors'));
 app.use('/api/consultants', require('./routes/consultants-simple'));
+app.use('/api/health', require('./routes/health'));
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/admin', adminRoutes);
 app.use('/api/admin/config', require('./routes/admin/config'));

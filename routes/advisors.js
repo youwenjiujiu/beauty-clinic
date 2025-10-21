@@ -1,10 +1,57 @@
 // 陪同顾问管理API
 const router = require('express').Router();
 const Consultant = require('../models/Consultant');
+const mongoose = require('mongoose');
+
+// 默认顾问数据
+const defaultAdvisors = [
+  {
+    id: 'ADV001',
+    name: '李顾问',
+    avatar: '/images/advisor1.jpg',
+    title: '资深医疗顾问',
+    experience: '5年',
+    specialty: '整形外科陪同',
+    rating: 4.9,
+    serviceCount: 328,
+    tags: ['专业', '细心', '经验丰富']
+  },
+  {
+    id: 'ADV002',
+    name: '张顾问',
+    avatar: '/images/advisor2.jpg',
+    title: '资深医疗顾问',
+    experience: '3年',
+    specialty: '皮肤科陪同',
+    rating: 4.8,
+    serviceCount: 256,
+    tags: ['耐心', '专业', '细致']
+  },
+  {
+    id: 'ADV003',
+    name: '王顾问',
+    avatar: '/images/advisor3.jpg',
+    title: '医疗顾问',
+    experience: '2年',
+    specialty: '综合陪同',
+    rating: 4.7,
+    serviceCount: 189,
+    tags: ['友善', '负责', '细心']
+  }
+];
 
 // 获取所有顾问列表（公开接口）
 router.get('/list', async (req, res) => {
   try {
+    // 检查数据库连接状态
+    if (mongoose.connection.readyState !== 1) {
+      console.log('数据库未连接，返回默认数据');
+      return res.json({
+        success: true,
+        data: defaultAdvisors
+      });
+    }
+
     // 从数据库获取活跃的顾问
     const consultants = await Consultant.find({
       status: 'active'
@@ -40,42 +87,6 @@ router.get('/list', async (req, res) => {
   } catch (error) {
     console.error('获取顾问列表失败:', error);
     // 如果数据库查询失败，返回默认数据
-    const defaultAdvisors = [
-      {
-        id: 'ADV001',
-        name: '李顾问',
-        avatar: '/images/advisor1.jpg',
-        title: '资深医疗顾问',
-        experience: '5年',
-        specialty: '整形外科陪同',
-        rating: 4.9,
-        serviceCount: 328,
-        tags: ['专业', '细心', '经验丰富']
-      },
-      {
-        id: 'ADV002',
-        name: '张顾问',
-        avatar: '/images/advisor2.jpg',
-        title: '资深医疗顾问',
-        experience: '3年',
-        specialty: '皮肤科陪同',
-        rating: 4.8,
-        serviceCount: 256,
-        tags: ['耐心', '专业', '细致']
-      },
-      {
-        id: 'ADV003',
-        name: '王顾问',
-        avatar: '/images/advisor3.jpg',
-        title: '医疗顾问',
-        experience: '2年',
-        specialty: '综合陪同',
-        rating: 4.7,
-        serviceCount: 189,
-        tags: ['友善', '负责', '细心']
-      }
-    ];
-
     res.json({
       success: true,
       data: defaultAdvisors
@@ -305,6 +316,15 @@ router.delete('/delete/:id', async (req, res) => {
 // 获取所有顾问（管理员接口，包含非活跃顾问）
 router.get('/admin/list', async (req, res) => {
   try {
+    // 检查数据库连接状态
+    if (mongoose.connection.readyState !== 1) {
+      console.log('数据库未连接，返回默认数据');
+      return res.json({
+        success: true,
+        data: defaultAdvisors
+      });
+    }
+
     const consultants = await Consultant.find().sort({
       status: -1,
       featured: -1,
