@@ -3,29 +3,29 @@ const router = require('express').Router();
 const Consultant = require('../models/Consultant');
 const mongoose = require('mongoose');
 
-// 默认顾问数据
+// 默认顾问数据（与数据库保持一致）
 const defaultAdvisors = [
   {
     id: 'ADV001',
-    name: '李顾问',
+    name: '小美顾问',
     avatar: '/images/advisor1.jpg',
-    title: '资深医疗顾问',
+    title: '资深顾问',
     experience: '5年',
-    specialty: '整形外科陪同',
+    specialty: '商务咨询',
     rating: 4.9,
-    serviceCount: 328,
-    tags: ['专业', '细心', '经验丰富']
+    serviceCount: 200,
+    tags: ['资深顾问', '专业服务', '经验丰富']
   },
   {
     id: 'ADV002',
-    name: '张顾问',
+    name: '李明顾问',
     avatar: '/images/advisor2.jpg',
-    title: '资深医疗顾问',
+    title: '专业顾问',
     experience: '3年',
-    specialty: '皮肤科陪同',
-    rating: 4.8,
-    serviceCount: 256,
-    tags: ['耐心', '专业', '细致']
+    specialty: '战略咨询',
+    rating: 4.7,
+    serviceCount: 120,
+    tags: ['专业顾问', '多语言']
   },
   {
     id: 'ADV003',
@@ -36,7 +36,7 @@ const defaultAdvisors = [
     specialty: '综合陪同',
     rating: 4.7,
     serviceCount: 189,
-    tags: ['友善', '负责', '细心']
+    tags: ['医疗顾问', '友善', '负责', '细心']
   }
 ];
 
