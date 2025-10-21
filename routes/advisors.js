@@ -1,120 +1,111 @@
 // 陪同顾问管理API
 const router = require('express').Router();
-
-// 内存存储（适用于Vercel）
-let advisorsStore = [
-  {
-    id: 'ADV001',
-    name: '李顾问',
-    avatar: '/images/advisor1.jpg',
-    title: '资深医疗顾问',
-    experience: '5年',
-    specialty: '整形外科陪同',
-    rating: 4.9,
-    serviceCount: 328,
-    tags: ['专业', '细心', '经验丰富'],
-    // 内部字段（不对外显示）
-    internal: {
-      languages: ['zh', 'kr'],
-      type: 'senior'
-    },
-    // 排班信息
-    schedule: [],
-    status: 'active'
-  },
-  {
-    id: 'ADV002',
-    name: '张顾问',
-    avatar: '/images/advisor2.jpg',
-    title: '资深医疗顾问',
-    experience: '3年',
-    specialty: '皮肤科陪同',
-    rating: 4.8,
-    serviceCount: 256,
-    tags: ['耐心', '专业', '细致'],
-    internal: {
-      languages: ['zh', 'kr'],
-      type: 'senior'
-    },
-    schedule: [],
-    status: 'active'
-  },
-  {
-    id: 'ADV003',
-    name: '王顾问',
-    avatar: '/images/advisor3.jpg',
-    title: '医疗顾问',
-    experience: '2年',
-    specialty: '综合陪同',
-    rating: 4.7,
-    serviceCount: 189,
-    tags: ['友善', '负责', '细心'],
-    internal: {
-      languages: ['zh', 'kr'],
-      type: 'senior'
-    },
-    schedule: [],
-    status: 'active'
-  }
-];
-
-// 排班存储
-let schedulesStore = {};
+const Consultant = require('../models/Consultant');
 
 // 获取所有顾问列表（公开接口）
-router.get('/list', (req, res) => {
+router.get('/list', async (req, res) => {
   try {
-    // 过滤掉内部信息，只返回公开信息
-    const publicAdvisors = advisorsStore
-      .filter(a => a.status === 'active')
-      .map(advisor => ({
-        id: advisor.id,
-        name: advisor.name,
-        avatar: advisor.avatar,
-        title: advisor.title,
-        experience: advisor.experience,
-        specialty: advisor.specialty,
-        rating: advisor.rating,
-        serviceCount: advisor.serviceCount,
-        tags: advisor.tags
-      }));
+    // 从数据库获取活跃的顾问
+    const consultants = await Consultant.find({
+      status: 'active'
+    }).select({
+      name: 1,
+      avatar: 1,
+      experience: 1,
+      specialties: 1,
+      rating: 1,
+      totalServices: 1,
+      tags: 1,
+      languages: 1,
+      serviceTypes: 1
+    }).sort({ featured: -1, sortOrder: -1, rating: -1 });
+
+    // 转换为小程序期望的格式
+    const advisors = consultants.map(consultant => ({
+      id: consultant._id.toString(),
+      name: consultant.name,
+      avatar: consultant.avatar || '/images/default-avatar.jpg',
+      title: consultant.tags && consultant.tags[0] || '医疗顾问',
+      experience: consultant.experience ? `${consultant.experience}年` : '1年',
+      specialty: consultant.specialties && consultant.specialties[0] || '综合陪同',
+      rating: consultant.rating || 5.0,
+      serviceCount: consultant.totalServices || 0,
+      tags: consultant.tags || ['专业', '细心']
+    }));
 
     res.json({
       success: true,
-      data: publicAdvisors
+      data: advisors
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: '获取顾问列表失败',
-      error: error.message
+    console.error('获取顾问列表失败:', error);
+    // 如果数据库查询失败，返回默认数据
+    const defaultAdvisors = [
+      {
+        id: 'ADV001',
+        name: '李顾问',
+        avatar: '/images/advisor1.jpg',
+        title: '资深医疗顾问',
+        experience: '5年',
+        specialty: '整形外科陪同',
+        rating: 4.9,
+        serviceCount: 328,
+        tags: ['专业', '细心', '经验丰富']
+      },
+      {
+        id: 'ADV002',
+        name: '张顾问',
+        avatar: '/images/advisor2.jpg',
+        title: '资深医疗顾问',
+        experience: '3年',
+        specialty: '皮肤科陪同',
+        rating: 4.8,
+        serviceCount: 256,
+        tags: ['耐心', '专业', '细致']
+      },
+      {
+        id: 'ADV003',
+        name: '王顾问',
+        avatar: '/images/advisor3.jpg',
+        title: '医疗顾问',
+        experience: '2年',
+        specialty: '综合陪同',
+        rating: 4.7,
+        serviceCount: 189,
+        tags: ['友善', '负责', '细心']
+      }
+    ];
+
+    res.json({
+      success: true,
+      data: defaultAdvisors
     });
   }
 });
 
 // 获取顾问详情（公开接口）
-router.get('/detail/:id', (req, res) => {
+router.get('/detail/:id', async (req, res) => {
   try {
-    const advisor = advisorsStore.find(a => a.id === req.params.id);
+    const consultant = await Consultant.findById(req.params.id);
 
-    if (!advisor) {
+    if (!consultant) {
       return res.status(404).json({
         success: false,
         message: '顾问不存在'
       });
     }
 
-    // 过滤内部信息
-    const publicInfo = {
-      id: advisor.id,
-      name: advisor.name,
-      avatar: advisor.avatar,
-      title: advisor.title,
-      experience: advisor.experience,
-      specialty: advisor.specialty,
-      rating: advisor.rating,
-      serviceCount: advisor.serviceCount,
-      tags: advisor.tags,
+    // 转换为小程序期望的格式
+    const advisorDetail = {
+      id: consultant._id.toString(),
+      name: consultant.name,
+      avatar: consultant.avatar || '/images/default-avatar.jpg',
+      title: consultant.tags && consultant.tags[0] || '医疗顾问',
+      experience: consultant.experience ? `${consultant.experience}年` : '1年',
+      specialty: consultant.specialties && consultant.specialties[0] || '综合陪同',
+      rating: consultant.rating || 5.0,
+      serviceCount: consultant.totalServices || 0,
+      tags: consultant.tags || ['专业', '细心'],
       reviews: [
         { user: '张**', comment: '非常专业，沟通顺畅', rating: 5 },
         { user: '李**', comment: '服务细心，帮助很大', rating: 5 },
@@ -124,9 +115,10 @@ router.get('/detail/:id', (req, res) => {
 
     res.json({
       success: true,
-      data: publicInfo
+      data: advisorDetail
     });
   } catch (error) {
+    console.error('获取顾问详情失败:', error);
     res.status(500).json({
       success: false,
       message: '获取顾问详情失败',
@@ -136,7 +128,7 @@ router.get('/detail/:id', (req, res) => {
 });
 
 // 获取可用顾问（根据时间筛选）
-router.post('/available', (req, res) => {
+router.post('/available', async (req, res) => {
   try {
     const { date, time } = req.body;
 
@@ -147,43 +139,37 @@ router.post('/available', (req, res) => {
       });
     }
 
-    // 查找该时间段可用的顾问
-    const availableAdvisors = advisorsStore.filter(advisor => {
-      if (advisor.status !== 'active') return false;
-
-      // 检查该顾问在这个时间是否有排班
-      const scheduleKey = `${advisor.id}_${date}`;
-      const daySchedule = schedulesStore[scheduleKey];
-
-      if (!daySchedule) {
-        // 如果没有设置排班，默认可用
-        return true;
-      }
-
-      // 检查具体时间段
-      const timeSlot = daySchedule.find(s => s.time === time);
-      return timeSlot ? timeSlot.available : false;
+    // 获取所有活跃的顾问
+    const consultants = await Consultant.find({
+      status: 'active'
+    }).select({
+      name: 1,
+      avatar: 1,
+      rating: 1,
+      tags: 1,
+      availability: 1
     });
 
-    // 返回可用顾问的公开信息
-    const publicAdvisors = availableAdvisors.map(advisor => ({
-      id: advisor.id,
-      name: advisor.name,
-      avatar: advisor.avatar,
-      title: advisor.title,
-      rating: advisor.rating,
+    // 转换为小程序期望的格式
+    const availableAdvisors = consultants.map(consultant => ({
+      id: consultant._id.toString(),
+      name: consultant.name,
+      avatar: consultant.avatar || '/images/default-avatar.jpg',
+      title: consultant.tags && consultant.tags[0] || '医疗顾问',
+      rating: consultant.rating || 5.0,
       available: true
     }));
 
     res.json({
       success: true,
-      data: publicAdvisors,
-      count: publicAdvisors.length,
-      message: publicAdvisors.length > 0
-        ? `${publicAdvisors.length}位顾问可选`
+      data: availableAdvisors,
+      count: availableAdvisors.length,
+      message: availableAdvisors.length > 0
+        ? `${availableAdvisors.length}位顾问可选`
         : '该时段暂无可用顾问'
     });
   } catch (error) {
+    console.error('查询可用顾问失败:', error);
     res.status(500).json({
       success: false,
       message: '查询可用顾问失败',
@@ -192,129 +178,56 @@ router.post('/available', (req, res) => {
   }
 });
 
-// 设置顾问排班（管理员接口）
-router.post('/schedule', (req, res) => {
-  try {
-    const { advisorId, date, slots } = req.body;
-
-    if (!advisorId || !date || !slots) {
-      return res.status(400).json({
-        success: false,
-        message: '请提供完整的排班信息'
-      });
-    }
-
-    const advisor = advisorsStore.find(a => a.id === advisorId);
-    if (!advisor) {
-      return res.status(404).json({
-        success: false,
-        message: '顾问不存在'
-      });
-    }
-
-    // 存储排班信息
-    const scheduleKey = `${advisorId}_${date}`;
-    schedulesStore[scheduleKey] = slots;
-
-    res.json({
-      success: true,
-      message: '排班设置成功',
-      data: {
-        advisorId,
-        date,
-        slots
-      }
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: '设置排班失败',
-      error: error.message
-    });
-  }
-});
-
-// 获取顾问排班（管理员接口）
-router.get('/schedule/:advisorId', (req, res) => {
-  try {
-    const { advisorId } = req.params;
-    const { startDate, endDate } = req.query;
-
-    const advisor = advisorsStore.find(a => a.id === advisorId);
-    if (!advisor) {
-      return res.status(404).json({
-        success: false,
-        message: '顾问不存在'
-      });
-    }
-
-    // 获取指定日期范围的排班
-    const schedules = {};
-    Object.keys(schedulesStore).forEach(key => {
-      if (key.startsWith(`${advisorId}_`)) {
-        const date = key.split('_')[1];
-        schedules[date] = schedulesStore[key];
-      }
-    });
-
-    res.json({
-      success: true,
-      data: {
-        advisorId,
-        advisorName: advisor.name,
-        schedules
-      }
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: '获取排班失败',
-      error: error.message
-    });
-  }
-});
-
 // 添加新顾问（管理员接口）
-router.post('/add', (req, res) => {
+router.post('/add', async (req, res) => {
   try {
-    const { name, title, experience, specialty, tags, languages } = req.body;
+    const consultantData = req.body;
 
-    if (!name || !title) {
-      return res.status(400).json({
-        success: false,
-        message: '请提供顾问姓名和职称'
-      });
-    }
+    // 创建新顾问
+    const newConsultant = new Consultant({
+      name: consultantData.name,
+      nameKr: consultantData.nameKr,
+      nameEn: consultantData.nameEn,
+      phone: consultantData.phone,
+      wechat: consultantData.wechat || 'default_wechat',
+      kakaoTalk: consultantData.kakaoTalk,
+      whatsapp: consultantData.whatsapp,
+      email: consultantData.email,
+      avatar: consultantData.avatar,
+      gender: consultantData.gender,
+      age: consultantData.age,
+      languages: consultantData.languages || ['中文'],
+      specialties: consultantData.specialties || ['综合陪同'],
+      experience: consultantData.experience || 1,
+      certification: consultantData.certification,
+      serviceAreas: consultantData.serviceAreas,
+      serviceTypes: consultantData.serviceTypes || ['陪同翻译'],
+      introduction: consultantData.introduction,
+      introductionKr: consultantData.introductionKr,
+      rating: consultantData.rating || 5.0,
+      reviewCount: consultantData.reviewCount || 0,
+      totalServices: consultantData.totalServices || 0,
+      consultationFee: consultantData.consultationFee || 0,
+      accompanyFee: consultantData.accompanyFee || 0,
+      availability: consultantData.availability,
+      tags: consultantData.tags || ['专业', '细心'],
+      status: consultantData.status || 'active',
+      featured: consultantData.featured || false,
+      sortOrder: consultantData.sortOrder || 0
+    });
 
-    const newAdvisor = {
-      id: `ADV${String(advisorsStore.length + 1).padStart(3, '0')}`,
-      name,
-      avatar: '/images/default-avatar.jpg',
-      title: title || '医疗顾问',
-      experience: experience || '1年',
-      specialty: specialty || '综合陪同',
-      rating: 5.0,
-      serviceCount: 0,
-      tags: tags || ['专业', '细心'],
-      internal: {
-        languages: languages || ['zh', 'kr'],
-        type: 'senior'
-      },
-      schedule: [],
-      status: 'active'
-    };
-
-    advisorsStore.push(newAdvisor);
+    await newConsultant.save();
 
     res.json({
       success: true,
       message: '顾问添加成功',
       data: {
-        id: newAdvisor.id,
-        name: newAdvisor.name
+        id: newConsultant._id.toString(),
+        name: newConsultant.name
       }
     });
   } catch (error) {
+    console.error('添加顾问失败:', error);
     res.status(500).json({
       success: false,
       message: '添加顾问失败',
@@ -324,28 +237,28 @@ router.post('/add', (req, res) => {
 });
 
 // 更新顾问信息（管理员接口）
-router.put('/update/:id', (req, res) => {
+router.put('/update/:id', async (req, res) => {
   try {
-    const advisorIndex = advisorsStore.findIndex(a => a.id === req.params.id);
+    const consultant = await Consultant.findByIdAndUpdate(
+      req.params.id,
+      { $set: req.body, updatedAt: new Date() },
+      { new: true }
+    );
 
-    if (advisorIndex === -1) {
+    if (!consultant) {
       return res.status(404).json({
         success: false,
         message: '顾问不存在'
       });
     }
 
-    advisorsStore[advisorIndex] = {
-      ...advisorsStore[advisorIndex],
-      ...req.body,
-      id: advisorsStore[advisorIndex].id // 保持ID不变
-    };
-
     res.json({
       success: true,
-      message: '顾问信息更新成功'
+      message: '顾问信息更新成功',
+      data: consultant
     });
   } catch (error) {
+    console.error('更新顾问信息失败:', error);
     res.status(500).json({
       success: false,
       message: '更新顾问信息失败',
@@ -354,29 +267,60 @@ router.put('/update/:id', (req, res) => {
   }
 });
 
-// 删除顾问（管理员接口）
-router.delete('/delete/:id', (req, res) => {
+// 删除顾问（管理员接口 - 软删除）
+router.delete('/delete/:id', async (req, res) => {
   try {
-    const index = advisorsStore.findIndex(a => a.id === req.params.id);
+    const consultant = await Consultant.findByIdAndUpdate(
+      req.params.id,
+      {
+        $set: {
+          status: 'inactive',
+          updatedAt: new Date()
+        }
+      },
+      { new: true }
+    );
 
-    if (index === -1) {
+    if (!consultant) {
       return res.status(404).json({
         success: false,
         message: '顾问不存在'
       });
     }
 
-    // 软删除，只改变状态
-    advisorsStore[index].status = 'inactive';
-
     res.json({
       success: true,
       message: '顾问删除成功'
     });
   } catch (error) {
+    console.error('删除顾问失败:', error);
     res.status(500).json({
       success: false,
       message: '删除顾问失败',
+      error: error.message
+    });
+  }
+});
+
+// 获取所有顾问（管理员接口，包含非活跃顾问）
+router.get('/admin/list', async (req, res) => {
+  try {
+    const consultants = await Consultant.find().sort({
+      status: -1,
+      featured: -1,
+      sortOrder: -1,
+      createdAt: -1
+    });
+
+    res.json({
+      success: true,
+      data: consultants
+    });
+  } catch (error) {
+    console.error('获取顾问列表失败:', error);
+    res.status(500).json({
+      success: false,
+      message: '获取顾问列表失败',
       error: error.message
     });
   }
