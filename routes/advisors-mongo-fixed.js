@@ -415,4 +415,34 @@ router.delete('/delete/:id', async (req, res) => {
   }
 });
 
+/**
+ * 添加顾问（REST风格路由）
+ * POST /api/consultants
+ */
+router.post('/', async (req, res) => {
+  // 重定向到 /add 路由处理
+  req.url = '/add';
+  return router.handle(req, res);
+});
+
+/**
+ * 更新顾问（REST风格路由）
+ * PUT /api/consultants/:id
+ */
+router.put('/:id', async (req, res) => {
+  // 重定向到 /update/:id 路由处理
+  req.url = '/update/' + req.params.id;
+  return router.handle(req, res);
+});
+
+/**
+ * 删除顾问（REST风格路由）
+ * DELETE /api/consultants/:id
+ */
+router.delete('/:id', async (req, res) => {
+  // 重定向到 /delete/:id 路由处理
+  req.url = '/delete/' + req.params.id;
+  return router.handle(req, res);
+});
+
 module.exports = router;
