@@ -88,8 +88,14 @@ app.use('/api/appointments', appointmentRoutes);
 app.use('/api/reviews', require('./routes/reviews'));
 app.use('/api/config', require('./routes/publicConfig-simple'));
 app.use('/api/config/projects', require('./routes/projects-config'));
-app.use('/api/advisors', require('./routes/advisors'));
-app.use('/api/consultants', require('./routes/consultants-simple'));
+// 根据配置选择存储方案
+const advisorsRoute = process.env.BLOB_READ_WRITE_TOKEN
+  ? require('./routes/advisors-blob')        // Vercel Blob存储（推荐）
+  : require('./routes/advisors-mongo-fixed'); // MongoDB（降级到默认数据）
+
+app.use('/api/advisors', advisorsRoute);
+// consultants路由重定向到advisors（统一API）
+app.use('/api/consultants', advisorsRoute);
 app.use('/api/health', require('./routes/health'));
 app.use('/api/test-mongo', require('./routes/test-mongo'));
 app.use('/api/notifications', require('./routes/notifications'));
