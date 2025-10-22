@@ -522,7 +522,7 @@ const app = createApp({
     // 新建诊所
     addClinic() {
       this.editingClinic = {
-        name: '',
+        nameCn: '',  // 前端用nameCn
         nameKr: '',
         logo: '',
         district: '',
@@ -537,7 +537,10 @@ const app = createApp({
 
     // 编辑诊所
     editClinic(clinic) {
-      this.editingClinic = { ...clinic };
+      this.editingClinic = {
+        ...clinic,
+        nameCn: clinic.name  // 后端的name映射到前端的nameCn
+      };
       this.showClinicModal = true;
     },
 
@@ -547,10 +550,15 @@ const app = createApp({
         // 处理specialties字段（字符串转数组）
         const clinicData = {
           ...this.editingClinic,
+          // 字段映射：前端用nameCn，后端用name
+          name: this.editingClinic.nameCn || this.editingClinic.name,
           specialties: typeof this.editingClinic.specialties === 'string'
             ? this.editingClinic.specialties.split(',').map(s => s.trim()).filter(s => s)
             : this.editingClinic.specialties
         };
+
+        // 删除nameCn字段，避免发送到后端
+        delete clinicData.nameCn;
 
         let result;
         if (this.editingClinic._id) {
