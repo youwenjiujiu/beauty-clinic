@@ -4,7 +4,7 @@ const clinicSchema = new mongoose.Schema({
   // 基本信息
   name: {
     type: String,
-    required: true,
+    required: [true, '请填写诊所名称'],
     index: true
   },
   nameEn: String,
@@ -13,7 +13,7 @@ const clinicSchema = new mongoose.Schema({
   // 位置信息
   address: {
     type: String,
-    required: true
+    required: [true, '请填写详细地址']
   },
   addressKr: String, // 韩文地址
   city: {
@@ -22,7 +22,7 @@ const clinicSchema = new mongoose.Schema({
   },
   district: {
     type: String,
-    required: true // 江南区、瑞草区等
+    required: [true, '请填写所在区域'] // 江南区、瑞草区等
   },
   location: {
     type: {
@@ -39,7 +39,7 @@ const clinicSchema = new mongoose.Schema({
   // 联系方式
   phone: {
     type: String,
-    required: true
+    required: [true, '请填写联系电话']
   },
   wechat: String,
   kakaoTalk: String,
@@ -49,7 +49,7 @@ const clinicSchema = new mongoose.Schema({
   // 详细信息
   description: {
     type: String,
-    required: true
+    required: [true, '请填写诊所简介']
   },
   shortDescription: String,
 

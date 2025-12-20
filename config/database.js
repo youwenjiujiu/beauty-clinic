@@ -26,9 +26,16 @@ async function connectDB() {
 
     // Vercel Serverless优化选项
     const options = {
-      serverSelectionTimeoutMS: 10000, // 增加超时时间
-      maxPoolSize: 1, // Serverless环境使用较小的连接池
+      serverSelectionTimeoutMS: 30000, // 增加到30秒
+      socketTimeoutMS: 45000,
+      maxPoolSize: 10,
+      minPoolSize: 1,
+      retryWrites: true,
+      retryReads: true,
     };
+
+    // 设置 strictQuery
+    mongoose.set('strictQuery', false);
 
     await mongoose.connect(mongoUri, options);
 
