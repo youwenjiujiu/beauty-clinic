@@ -211,7 +211,8 @@ const clinicSchema = new mongoose.Schema({
   // SEO
   slug: {
     type: String,
-    unique: true
+    unique: true,
+    sparse: true  // 允许多个 null 值
   },
   metaTitle: String,
   metaDescription: String,

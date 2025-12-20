@@ -351,7 +351,16 @@ router.post('/admin', async (req, res) => {
   }
 
   try {
-    const clinic = new Clinic(req.body);
+    const clinicData = { ...req.body };
+
+    // 自动生成唯一的 slug（如果没有提供）
+    if (!clinicData.slug && clinicData.name) {
+      const timestamp = Date.now();
+      const randomStr = Math.random().toString(36).substring(2, 8);
+      clinicData.slug = `clinic-${timestamp}-${randomStr}`;
+    }
+
+    const clinic = new Clinic(clinicData);
     await clinic.save();
 
     res.json({
@@ -368,6 +377,14 @@ router.post('/admin', async (req, res) => {
         success: false,
         message: '请填写必填字段：' + messages.join('、'),
         errors: messages
+      });
+    }
+
+    // 处理重复键错误
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: '诊所信息重复，请检查名称或其他唯一字段'
       });
     }
 
