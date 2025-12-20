@@ -86,7 +86,7 @@ router.get('/featured', async (req, res) => {
   try {
     const clinics = await Clinic
       .find({ featured: true, status: 'active' })
-      .select('name nameKr address district specialties rating reviewCount priceRange logo coverImage tags')
+      .select('name nameKr address district specialties rating reviewCount priceRange logo coverImage tags phone description naverRating status verified featured')
       .sort({ sortOrder: -1 })
       .limit(6);
 
@@ -239,7 +239,7 @@ router.get('/search', async (req, res) => {
         $text: { $search: q },
         status: 'active'
       })
-      .select('name nameKr address district specialties rating reviewCount')
+      .select('name nameKr address district specialties rating reviewCount priceRange logo coverImage tags phone description naverRating status verified featured')
       .limit(parseInt(limit));
 
     res.json({
@@ -283,7 +283,7 @@ router.get('/nearby', async (req, res) => {
         },
         status: 'active'
       })
-      .select('name nameKr address district specialties rating reviewCount location')
+      .select('name nameKr address district specialties rating reviewCount location priceRange logo coverImage tags phone description naverRating status verified featured')
       .limit(parseInt(limit));
 
     res.json({
