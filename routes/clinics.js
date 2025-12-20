@@ -360,6 +360,17 @@ router.post('/admin', async (req, res) => {
       clinicData.slug = `clinic-${timestamp}-${randomStr}`;
     }
 
+    // 价格档次中文转符号映射
+    const priceRangeMap = {
+      '低档': '$',
+      '中档': '$$',
+      '中高档': '$$$',
+      '高档': '$$$$'
+    };
+    if (clinicData.priceRange && priceRangeMap[clinicData.priceRange]) {
+      clinicData.priceRange = priceRangeMap[clinicData.priceRange];
+    }
+
     const clinic = new Clinic(clinicData);
     await clinic.save();
 
@@ -421,9 +432,22 @@ router.put('/admin/:id', async (req, res) => {
   }
 
   try {
+    const updateData = { ...req.body };
+
+    // 价格档次中文转符号映射
+    const priceRangeMap = {
+      '低档': '$',
+      '中档': '$$',
+      '中高档': '$$$',
+      '高档': '$$$$'
+    };
+    if (updateData.priceRange && priceRangeMap[updateData.priceRange]) {
+      updateData.priceRange = priceRangeMap[updateData.priceRange];
+    }
+
     const clinic = await Clinic.findByIdAndUpdate(
       req.params.id,
-      req.body,
+      updateData,
       { new: true, runValidators: true }
     );
 
