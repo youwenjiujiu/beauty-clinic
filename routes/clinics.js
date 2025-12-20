@@ -353,6 +353,17 @@ router.post('/admin', async (req, res) => {
   try {
     const clinicData = { ...req.body };
 
+    // 检查是否已存在同名诊所
+    if (clinicData.name) {
+      const existingClinic = await Clinic.findOne({ name: clinicData.name });
+      if (existingClinic) {
+        return res.status(400).json({
+          success: false,
+          message: `诊所"${clinicData.name}"已存在，请勿重复添加`
+        });
+      }
+    }
+
     // 自动生成唯一的 slug（如果没有提供）
     if (!clinicData.slug && clinicData.name) {
       const timestamp = Date.now();
