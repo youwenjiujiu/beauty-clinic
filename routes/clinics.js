@@ -50,7 +50,7 @@ router.get('/', async (req, res) => {
 
     const clinics = await Clinic
       .find(query)
-      .select('name nameKr address district specialties rating reviewCount priceRange logo coverImage tags verified featured')
+      .select('name nameKr address district specialties rating reviewCount priceRange logo coverImage tags verified featured phone description naverRating status')
       .sort(sort)
       .skip(skip)
       .limit(parseInt(limit));
