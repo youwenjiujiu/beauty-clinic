@@ -63,9 +63,9 @@ app.use(cors({
 // 请求日志
 app.use(morgan('combined'));
 
-// 请求体解析
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// 请求体解析（增大限制以支持图片上传）
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // 静态文件服务（管理后台）
 app.use('/admin', express.static('admin-dashboard'));
