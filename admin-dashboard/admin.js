@@ -48,7 +48,8 @@ const app = createApp({
         district: '',
         address: '',
         phone: '',
-        specialties: '',
+        specialties: [],
+        tags: [],
         priceRange: '中档',
         featured: false,
         logo: ''
@@ -62,6 +63,10 @@ const app = createApp({
 
       // 轮播图
       banners: [],
+
+      // 预设选项
+      specialtyOptions: ['皮肤管理', '整形手术', '填充', '激光治疗', '身体塑形', '抗衰老', '眼部整形', '鼻部整形', '面部轮廓', '胸部整形', '毛发移植', '牙齿美容'],
+      tagOptions: ['中文服务', '价格优惠', '性价比', '推荐', 'VIP服务', '24小时服务', '免费咨询', '术后护理', '明星医院', '网红打卡'],
 
       // 服务项目管理
       services: [],
@@ -530,7 +535,8 @@ const app = createApp({
         district: '',
         address: '',
         phone: '',
-        specialties: '',
+        specialties: [],
+        tags: [],
         priceRange: '中档',
         featured: false
       };
@@ -602,17 +608,86 @@ const app = createApp({
       });
     },
 
+    // 专长领域选择相关方法
+    isSpecialtySelected(specialty) {
+      if (!this.editingClinic || !this.editingClinic.specialties) return false;
+      const specs = Array.isArray(this.editingClinic.specialties)
+        ? this.editingClinic.specialties
+        : this.editingClinic.specialties.split(',').map(s => s.trim());
+      return specs.includes(specialty);
+    },
+
+    toggleSpecialty(specialty) {
+      if (!this.editingClinic.specialties) {
+        this.editingClinic.specialties = [];
+      }
+      // 确保是数组
+      if (typeof this.editingClinic.specialties === 'string') {
+        this.editingClinic.specialties = this.editingClinic.specialties.split(',').map(s => s.trim()).filter(s => s);
+      }
+      const index = this.editingClinic.specialties.indexOf(specialty);
+      if (index > -1) {
+        this.editingClinic.specialties.splice(index, 1);
+      } else {
+        this.editingClinic.specialties.push(specialty);
+      }
+    },
+
+    getSelectedSpecialties() {
+      if (!this.editingClinic || !this.editingClinic.specialties) return '';
+      const specs = Array.isArray(this.editingClinic.specialties)
+        ? this.editingClinic.specialties
+        : this.editingClinic.specialties.split(',').map(s => s.trim());
+      return specs.join(', ');
+    },
+
+    // 标签选择相关方法
+    isTagSelected(tag) {
+      if (!this.editingClinic || !this.editingClinic.tags) return false;
+      const tags = Array.isArray(this.editingClinic.tags)
+        ? this.editingClinic.tags
+        : this.editingClinic.tags.split(',').map(t => t.trim());
+      return tags.includes(tag);
+    },
+
+    toggleTag(tag) {
+      if (!this.editingClinic.tags) {
+        this.editingClinic.tags = [];
+      }
+      // 确保是数组
+      if (typeof this.editingClinic.tags === 'string') {
+        this.editingClinic.tags = this.editingClinic.tags.split(',').map(t => t.trim()).filter(t => t);
+      }
+      const index = this.editingClinic.tags.indexOf(tag);
+      if (index > -1) {
+        this.editingClinic.tags.splice(index, 1);
+      } else {
+        this.editingClinic.tags.push(tag);
+      }
+    },
+
+    getSelectedTags() {
+      if (!this.editingClinic || !this.editingClinic.tags) return '';
+      const tags = Array.isArray(this.editingClinic.tags)
+        ? this.editingClinic.tags
+        : this.editingClinic.tags.split(',').map(t => t.trim());
+      return tags.join(', ');
+    },
+
     // 保存诊所
     async saveClinic() {
       try {
-        // 处理specialties字段（字符串转数组）
+        // 处理specialties和tags字段（确保是数组）
         const clinicData = {
           ...this.editingClinic,
           // 字段映射：前端用nameCn，后端用name
           name: this.editingClinic.nameCn || this.editingClinic.name,
           specialties: typeof this.editingClinic.specialties === 'string'
             ? this.editingClinic.specialties.split(',').map(s => s.trim()).filter(s => s)
-            : this.editingClinic.specialties
+            : (this.editingClinic.specialties || []),
+          tags: typeof this.editingClinic.tags === 'string'
+            ? this.editingClinic.tags.split(',').map(t => t.trim()).filter(t => t)
+            : (this.editingClinic.tags || [])
         };
 
         // 删除nameCn字段，避免发送到后端

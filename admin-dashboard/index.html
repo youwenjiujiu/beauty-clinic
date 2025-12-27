@@ -695,14 +695,29 @@
             </div>
 
             <div class="col-span-2">
-              <label class="block text-sm font-medium mb-1">专长领域</label>
-              <input v-model="editingClinic.specialties" class="w-full border rounded px-3 py-2" placeholder="皮肤管理,整形手术,微整形 (逗号分隔)">
+              <label class="block text-sm font-medium mb-2">专长领域（点击选择）</label>
+              <div class="flex flex-wrap gap-2">
+                <label v-for="specialty in specialtyOptions" :key="specialty"
+                  class="inline-flex items-center px-3 py-1.5 rounded-full cursor-pointer transition-all text-sm"
+                  :class="isSpecialtySelected(specialty) ? 'bg-blue-500 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'">
+                  <input type="checkbox" :value="specialty" class="hidden" @change="toggleSpecialty(specialty)">
+                  <span>{{ specialty }}</span>
+                </label>
+              </div>
+              <p class="text-xs text-gray-500 mt-2">已选: {{ getSelectedSpecialties() || '无' }}</p>
             </div>
 
             <div class="col-span-2">
-              <label class="block text-sm font-medium mb-1">标签 (Tags)</label>
-              <input v-model="editingClinic.tags" class="w-full border rounded px-3 py-2" placeholder="反馈,中文服务,价格优惠 (逗号分隔)">
-              <p class="text-xs text-gray-500 mt-1">可用标签：反馈、中文服务、价格优惠等</p>
+              <label class="block text-sm font-medium mb-2">标签（点击选择）</label>
+              <div class="flex flex-wrap gap-2">
+                <label v-for="tag in tagOptions" :key="tag"
+                  class="inline-flex items-center px-3 py-1.5 rounded-full cursor-pointer transition-all text-sm"
+                  :class="isTagSelected(tag) ? 'bg-green-500 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'">
+                  <input type="checkbox" :value="tag" class="hidden" @change="toggleTag(tag)">
+                  <span>{{ tag }}</span>
+                </label>
+              </div>
+              <p class="text-xs text-gray-500 mt-2">已选: {{ getSelectedTags() || '无' }}</p>
             </div>
 
             <!-- 特色和状态 -->
