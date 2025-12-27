@@ -598,9 +598,21 @@
             </div>
 
             <div>
-              <label class="block text-sm font-medium mb-1">Logo图片URL</label>
-              <input v-model="editingClinic.logo" class="w-full border rounded px-3 py-2" placeholder="https://...">
-              <p class="text-xs text-gray-500 mt-1">图床上传后获取URL</p>
+              <label class="block text-sm font-medium mb-1">Logo图片</label>
+              <!-- 图片预览 -->
+              <div v-if="editingClinic.logo" class="mb-2">
+                <img :src="editingClinic.logo" class="w-20 h-20 object-cover rounded border" />
+              </div>
+              <!-- 上传按钮 -->
+              <div class="flex items-center space-x-2">
+                <label class="cursor-pointer bg-blue-500 text-white px-3 py-2 rounded hover:bg-blue-600 text-sm">
+                  <span v-if="!uploadingLogo">{{ editingClinic.logo ? '更换图片' : '上传图片' }}</span>
+                  <span v-else>上传中...</span>
+                  <input type="file" accept="image/*" @change="uploadClinicLogo" class="hidden" :disabled="uploadingLogo">
+                </label>
+                <span v-if="editingClinic.logo" @click="editingClinic.logo = ''" class="text-red-500 cursor-pointer text-sm hover:underline">删除</span>
+              </div>
+              <p class="text-xs text-gray-500 mt-1">支持 JPG、PNG 格式，建议尺寸 200x200</p>
             </div>
 
             <div>

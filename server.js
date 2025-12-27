@@ -101,6 +101,7 @@ app.use('/api/test-mongo', require('./routes/test-mongo'));
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/admin', adminRoutes);
 app.use('/api/admin/config', require('./routes/admin/config'));
+app.use('/api/upload', require('./routes/upload'));
 
 // 健康检查
 app.get('/health', (req, res) => {

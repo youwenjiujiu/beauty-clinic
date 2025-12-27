@@ -50,8 +50,10 @@ const app = createApp({
         phone: '',
         specialties: '',
         priceRange: '中档',
-        featured: false
+        featured: false,
+        logo: ''
       },
+      uploadingLogo: false,  // Logo上传中状态
 
       // 陪同顾问管理
       consultants: [],
@@ -542,6 +544,62 @@ const app = createApp({
         nameCn: clinic.name  // 后端的name映射到前端的nameCn
       };
       this.showClinicModal = true;
+    },
+
+    // 上传诊所Logo图片
+    async uploadClinicLogo(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      // 检查文件类型
+      if (!file.type.startsWith('image/')) {
+        alert('请选择图片文件');
+        return;
+      }
+
+      // 检查文件大小（限制2MB）
+      if (file.size > 2 * 1024 * 1024) {
+        alert('图片大小不能超过2MB');
+        return;
+      }
+
+      this.uploadingLogo = true;
+
+      try {
+        // 将图片转为 base64
+        const base64 = await this.fileToBase64(file);
+
+        // 上传到服务器
+        const result = await this.apiRequest('POST', '/upload/image', {
+          image: base64,
+          folder: 'clinic-logos',
+          filename: `clinic-logo-${Date.now()}.${file.name.split('.').pop()}`
+        });
+
+        if (result.success) {
+          this.editingClinic.logo = result.data.url;
+          console.log('Logo上传成功:', result.data.url);
+        } else {
+          alert('上传失败: ' + (result.message || '未知错误'));
+        }
+      } catch (error) {
+        console.error('上传Logo失败:', error);
+        alert('上传失败，请重试');
+      } finally {
+        this.uploadingLogo = false;
+        // 清空文件输入，允许重复选择同一文件
+        event.target.value = '';
+      }
+    },
+
+    // 文件转base64
+    fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
     },
 
     // 保存诊所
