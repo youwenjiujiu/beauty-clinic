@@ -380,7 +380,7 @@ router.get('/banners', async (req, res) => {
 let categoriesStore = [
   { id: 'skin', name: '皮肤管理', icon: '🧴', order: 1, type: 'both' },
   { id: 'plastic', name: '整形手术', icon: '💉', order: 2, type: 'both' },
-  { id: 'injection', name: '微整形', icon: '💊', order: 3, type: 'both' },
+  { id: 'injection', name: '填充', icon: '💊', order: 3, type: 'both' },
   { id: 'laser', name: '激光治疗', icon: '✨', order: 4, type: 'both' },
   { id: 'body', name: '身体塑形', icon: '💪', order: 5, type: 'filter' },
   { id: 'antiaging', name: '抗衰老', icon: '🌟', order: 6, type: 'filter' }
