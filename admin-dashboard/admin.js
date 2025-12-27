@@ -541,6 +541,7 @@ const app = createApp({
         featured: false
       };
       this.showClinicModal = true;
+      document.body.style.overflow = 'hidden';  // 禁止背景滚动
     },
 
     // 编辑诊所
@@ -550,6 +551,14 @@ const app = createApp({
         nameCn: clinic.name  // 后端的name映射到前端的nameCn
       };
       this.showClinicModal = true;
+      document.body.style.overflow = 'hidden';  // 禁止背景滚动
+    },
+
+    // 关闭诊所弹窗
+    closeClinicModal() {
+      this.showClinicModal = false;
+      this.editingClinic = null;
+      document.body.style.overflow = '';  // 恢复背景滚动
     },
 
     // 上传诊所Logo图片
@@ -704,8 +713,7 @@ const app = createApp({
 
         if (result.success) {
           alert('保存成功！');
-          this.showClinicModal = false;
-          this.editingClinic = null;
+          this.closeClinicModal();  // 关闭弹窗并恢复滚动
           // 重新加载诊所列表
           this.loadClinics();
         }
