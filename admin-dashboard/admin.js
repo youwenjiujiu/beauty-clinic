@@ -572,9 +572,9 @@ const app = createApp({
         return;
       }
 
-      // 检查文件大小（限制2MB）
-      if (file.size > 2 * 1024 * 1024) {
-        alert('图片大小不能超过2MB');
+      // 检查文件大小（限制10MB）
+      if (file.size > 10 * 1024 * 1024) {
+        alert('图片大小不能超过10MB');
         return;
       }
 
