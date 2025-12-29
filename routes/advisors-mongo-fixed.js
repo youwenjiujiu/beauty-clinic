@@ -71,53 +71,8 @@ function getAdvisorModel() {
   return mongoose.model('Advisor', advisorSchema);
 }
 
-// 默认顾问数据
-const defaultAdvisors = [
-  {
-    _id: 'advisor_001',
-    name: '小美顾问',
-    nameKr: '샤오메이',
-    phone: '010-1234-5678',
-    wechat: 'xiaomei_service',
-    avatar: '',
-    gender: 'female',
-    languages: ['中文', '韩语'],
-    specialties: ['医美咨询', '整形咨询'],
-    experience: 5,
-    serviceAreas: ['江南区', '瑞草区'],
-    serviceTypes: ['陪同翻译', '项目咨询', '预约安排'],
-    introduction: '5年医美陪同经验，熟悉首尔各大医美机构',
-    rating: 4.9,
-    reviewCount: 156,
-    totalServices: 200,
-    status: 'active',
-    featured: true,
-    tags: ['资深顾问', '双语服务', '医美专家'],
-    sortOrder: 10
-  },
-  {
-    _id: 'advisor_002',
-    name: '李明顾问',
-    nameKr: '리밍',
-    phone: '010-2345-6789',
-    wechat: 'liming_consultant',
-    avatar: '',
-    gender: 'male',
-    languages: ['中文', '韩语', '英语'],
-    specialties: ['整形咨询', '术后护理'],
-    experience: 3,
-    serviceAreas: ['江南区', '明洞'],
-    serviceTypes: ['陪同翻译', '术后跟进'],
-    introduction: '3年医美行业经验，专注整形项目咨询',
-    rating: 4.7,
-    reviewCount: 89,
-    totalServices: 120,
-    status: 'active',
-    featured: false,
-    tags: ['整形专家', '多语言'],
-    sortOrder: 5
-  }
-];
+// 默认顾问数据（已清空）
+const defaultAdvisors = [];
 
 /**
  * 获取管理员顾问列表
