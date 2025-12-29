@@ -129,6 +129,9 @@ const clinicSchema = new mongoose.Schema({
   logo: String,
   images: [String],
   coverImage: String,
+  priceImage: String,  // 价格图片
+  certificationImage: String,  // 单张资质认证图片（兼容）
+  certificationImages: [String],  // 多张资质认证图片
   gallery: [{
     url: String,
     caption: String,

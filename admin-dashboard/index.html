@@ -720,6 +720,46 @@
               <p class="text-xs text-gray-500 mt-2">已选: {{ getSelectedTags() || '无' }}</p>
             </div>
 
+            <!-- 图片上传 -->
+            <div class="col-span-2">
+              <h4 class="text-lg font-semibold mb-3 mt-4 text-blue-600">图片资料</h4>
+            </div>
+
+            <!-- 价格图片 -->
+            <div class="col-span-2">
+              <label class="block text-sm font-medium mb-1">项目价格图片</label>
+              <p class="text-xs text-gray-500 mb-2">上传价目表图片，将在小程序"价格明细"中展示</p>
+              <div v-if="editingClinic.priceImage" class="mb-2">
+                <img :src="editingClinic.priceImage" class="max-w-full h-40 object-contain rounded border" />
+              </div>
+              <div class="flex items-center space-x-2">
+                <label class="cursor-pointer bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 inline-flex items-center">
+                  <input type="file" class="hidden" accept="image/*" @change="uploadPriceImage">
+                  <span v-if="!uploadingPriceImage">{{ editingClinic.priceImage ? '更换价格图片' : '上传价格图片' }}</span>
+                  <span v-else>上传中...</span>
+                </label>
+                <span v-if="editingClinic.priceImage" @click="editingClinic.priceImage = ''" class="text-red-500 cursor-pointer text-sm hover:underline">删除</span>
+              </div>
+            </div>
+
+            <!-- 资质认证图片 -->
+            <div class="col-span-2">
+              <label class="block text-sm font-medium mb-1">资质认证图片</label>
+              <p class="text-xs text-gray-500 mb-2">上传医生/机构资质证书图片，将在小程序"店铺信息"中展示</p>
+              <div v-if="editingClinic.certificationImages && editingClinic.certificationImages.length > 0" class="flex flex-wrap gap-2 mb-2">
+                <div v-for="(img, index) in editingClinic.certificationImages" :key="index" class="relative">
+                  <img :src="img" class="w-32 h-24 object-cover rounded border" />
+                  <span @click="removeCertImage(index)" class="absolute -top-2 -right-2 bg-red-500 text-white w-5 h-5 rounded-full flex items-center justify-center cursor-pointer text-xs">×</span>
+                </div>
+              </div>
+              <label class="cursor-pointer bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 inline-flex items-center">
+                <input type="file" class="hidden" accept="image/*" @change="uploadCertImage" multiple>
+                <span v-if="!uploadingCertImage">添加资质图片</span>
+                <span v-else>上传中...</span>
+              </label>
+              <p class="text-xs text-gray-500 mt-1">支持上传多张图片</p>
+            </div>
+
             <!-- 特色和状态 -->
             <div class="col-span-2">
               <h4 class="text-lg font-semibold mb-3 mt-4 text-blue-600">特色和状态</h4>

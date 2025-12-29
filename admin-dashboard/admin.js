@@ -52,9 +52,13 @@ const app = createApp({
         tags: [],
         priceRange: '中档',
         featured: false,
-        logo: ''
+        logo: '',
+        priceImage: '',
+        certificationImages: []
       },
       uploadingLogo: false,  // Logo上传中状态
+      uploadingPriceImage: false,  // 价格图片上传中状态
+      uploadingCertImage: false,  // 资质图片上传中状态
 
       // 陪同顾问管理
       consultants: [],
@@ -615,6 +619,100 @@ const app = createApp({
         reader.onerror = reject;
         reader.readAsDataURL(file);
       });
+    },
+
+    // 上传价格图片
+    async uploadPriceImage(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      if (!file.type.startsWith('image/')) {
+        alert('请选择图片文件');
+        return;
+      }
+
+      if (file.size > 10 * 1024 * 1024) {
+        alert('图片大小不能超过10MB');
+        return;
+      }
+
+      this.uploadingPriceImage = true;
+
+      try {
+        const base64 = await this.fileToBase64(file);
+        const result = await this.apiRequest('POST', '/upload/image', {
+          image: base64,
+          folder: 'clinic-prices',
+          filename: `price-${Date.now()}.${file.name.split('.').pop()}`
+        });
+
+        if (result.success) {
+          this.editingClinic.priceImage = result.data.url;
+          console.log('价格图片上传成功:', result.data.url);
+        } else {
+          alert('上传失败: ' + (result.message || '未知错误'));
+        }
+      } catch (error) {
+        console.error('上传价格图片失败:', error);
+        alert('上传失败，请重试');
+      } finally {
+        this.uploadingPriceImage = false;
+        event.target.value = '';
+      }
+    },
+
+    // 上传资质认证图片
+    async uploadCertImage(event) {
+      const files = event.target.files;
+      if (!files || files.length === 0) return;
+
+      this.uploadingCertImage = true;
+
+      try {
+        // 确保certificationImages是数组
+        if (!this.editingClinic.certificationImages) {
+          this.editingClinic.certificationImages = [];
+        }
+
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+
+          if (!file.type.startsWith('image/')) {
+            console.log('跳过非图片文件:', file.name);
+            continue;
+          }
+
+          if (file.size > 10 * 1024 * 1024) {
+            alert(`图片 ${file.name} 超过10MB，已跳过`);
+            continue;
+          }
+
+          const base64 = await this.fileToBase64(file);
+          const result = await this.apiRequest('POST', '/upload/image', {
+            image: base64,
+            folder: 'clinic-certs',
+            filename: `cert-${Date.now()}-${i}.${file.name.split('.').pop()}`
+          });
+
+          if (result.success) {
+            this.editingClinic.certificationImages.push(result.data.url);
+            console.log('资质图片上传成功:', result.data.url);
+          }
+        }
+      } catch (error) {
+        console.error('上传资质图片失败:', error);
+        alert('上传失败，请重试');
+      } finally {
+        this.uploadingCertImage = false;
+        event.target.value = '';
+      }
+    },
+
+    // 删除资质图片
+    removeCertImage(index) {
+      if (this.editingClinic.certificationImages) {
+        this.editingClinic.certificationImages.splice(index, 1);
+      }
     },
 
     // 专长领域选择相关方法
