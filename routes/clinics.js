@@ -2,6 +2,7 @@ const router = require('express').Router();
 const Clinic = require('../models/Clinic');
 const Review = require('../models/Review');
 const { verifyToken } = require('../middleware/auth');
+const { ensureConnected } = require('../config/database');
 
 /**
  * 获取诊所列表
@@ -9,6 +10,9 @@ const { verifyToken } = require('../middleware/auth');
  */
 router.get('/', async (req, res) => {
   try {
+    // 确保数据库已连接
+    await ensureConnected();
+
     const {
       district,
       specialty,
@@ -84,6 +88,7 @@ router.get('/', async (req, res) => {
  */
 router.get('/featured', async (req, res) => {
   try {
+    await ensureConnected();
     const clinics = await Clinic
       .find({ featured: true, status: 'active' })
       .select('name nameKr address district specialties rating reviewCount priceRange logo coverImage tags phone description naverRating status verified featured')
@@ -109,6 +114,7 @@ router.get('/featured', async (req, res) => {
  */
 router.get('/:id', async (req, res) => {
   try {
+    await ensureConnected();
     const clinic = await Clinic.findById(req.params.id);
 
     if (!clinic) {
@@ -351,6 +357,7 @@ router.post('/admin', async (req, res) => {
   }
 
   try {
+    await ensureConnected();
     const clinicData = { ...req.body };
 
     // 检查是否已存在同名诊所
@@ -443,6 +450,7 @@ router.put('/admin/:id', async (req, res) => {
   }
 
   try {
+    await ensureConnected();
     const updateData = { ...req.body };
 
     // 价格档次中文转符号映射

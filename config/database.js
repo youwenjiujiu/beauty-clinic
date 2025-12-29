@@ -1,71 +1,84 @@
 const mongoose = require('mongoose');
 
-// 缓存连接状态
-let isConnected = false;
+// 缓存连接Promise（避免并发连接）
+let connectionPromise = null;
 
 /**
  * 连接MongoDB数据库（优化为Serverless环境）
  */
 async function connectDB() {
-  try {
-    // 如果已经连接，直接返回
-    if (isConnected && mongoose.connection.readyState === 1) {
-      console.log('♻️ 使用现有MongoDB连接');
+  // 检查当前连接状态
+  const readyState = mongoose.connection.readyState;
+
+  // 0 = disconnected, 1 = connected, 2 = connecting, 3 = disconnecting
+  if (readyState === 1) {
+    return; // 已连接
+  }
+
+  if (readyState === 2) {
+    // 正在连接中，等待连接完成
+    if (connectionPromise) {
+      await connectionPromise;
       return;
     }
+  }
 
-    // 在 Vercel 上，环境变量可能需要特殊处理
-    const mongoUri = process.env.MONGODB_URI || process.env.mongodb_uri || 'mongodb://localhost:27017/dudu-appointment';
+  // 在 Vercel 上，环境变量可能需要特殊处理
+  const mongoUri = process.env.MONGODB_URI || process.env.mongodb_uri || 'mongodb://localhost:27017/dudu-appointment';
 
-    console.log('MongoDB 连接配置:');
-    console.log('- 使用的URI:', mongoUri.includes('mongodb+srv') ? 'MongoDB Atlas' : 'Local MongoDB');
-    console.log('- 环境:', process.env.NODE_ENV);
-    console.log('- MONGODB_URI 是否存在:', !!process.env.MONGODB_URI);
-    console.log('- URI 前20个字符:', mongoUri.substring(0, 20) + '...');
-    console.log('- 连接状态:', mongoose.connection.readyState);
+  console.log('MongoDB 连接配置:');
+  console.log('- 使用的URI:', mongoUri.includes('mongodb+srv') ? 'MongoDB Atlas' : 'Local MongoDB');
+  console.log('- 连接状态:', readyState);
 
-    // Vercel Serverless优化选项
-    const options = {
-      serverSelectionTimeoutMS: 30000, // 增加到30秒
-      socketTimeoutMS: 45000,
-      maxPoolSize: 10,
-      minPoolSize: 1,
-      retryWrites: true,
-      retryReads: true,
-    };
+  // Vercel Serverless优化选项
+  const options = {
+    serverSelectionTimeoutMS: 30000,
+    socketTimeoutMS: 45000,
+    maxPoolSize: 10,
+    minPoolSize: 1,
+    retryWrites: true,
+    retryReads: true,
+  };
 
-    // 设置 strictQuery
-    mongoose.set('strictQuery', false);
+  // 设置 strictQuery
+  mongoose.set('strictQuery', false);
 
-    await mongoose.connect(mongoUri, options);
-
+  try {
+    // 保存连接Promise，避免并发调用
+    connectionPromise = mongoose.connect(mongoUri, options);
+    await connectionPromise;
     console.log('✅ MongoDB连接成功');
-    isConnected = true;
-
-    // 连接事件监听
-    mongoose.connection.on('error', (err) => {
-      console.error('MongoDB连接错误:', err);
-      isConnected = false;
-    });
-
-    mongoose.connection.on('disconnected', () => {
-      console.warn('MongoDB连接断开');
-      isConnected = false;
-    });
-
-    mongoose.connection.on('reconnected', () => {
-      console.log('MongoDB重新连接成功');
-      isConnected = true;
-    });
-
   } catch (error) {
     console.error('❌ MongoDB连接失败:', error.message);
-    // 临时跳过 MongoDB 错误，让登录功能可以工作
-    console.log('⚠️  继续运行无数据库模式');
-    // if (process.env.NODE_ENV === 'production') {
-    //   process.exit(1);
-    // }
+    connectionPromise = null;
+    throw error; // 抛出错误让调用者处理
   }
+}
+
+/**
+ * 确保数据库已连接（用于API路由）
+ */
+async function ensureConnected() {
+  const maxRetries = 3;
+  let lastError;
+
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      await connectDB();
+
+      // 验证连接确实成功
+      if (mongoose.connection.readyState === 1) {
+        return true;
+      }
+    } catch (error) {
+      lastError = error;
+      console.log(`连接尝试 ${i + 1}/${maxRetries} 失败:`, error.message);
+      // 短暂等待后重试
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+  }
+
+  throw lastError || new Error('数据库连接失败');
 }
 
 /**
@@ -82,5 +95,6 @@ async function disconnectDB() {
 
 module.exports = {
   connectDB,
-  disconnectDB
+  disconnectDB,
+  ensureConnected
 };
