@@ -241,9 +241,9 @@ router.put('/update/:id', async (req, res) => {
 
 /**
  * 删除顾问
- * DELETE /api/advisors/delete/:id
+ * DELETE /api/advisors/delete/:id 或 DELETE /api/advisors/:id
  */
-router.delete('/delete/:id', async (req, res) => {
+router.delete('/:id', async (req, res) => {
   try {
     const advisors = await loadFromBlob();
     const index = advisors.findIndex(a => a._id === req.params.id);

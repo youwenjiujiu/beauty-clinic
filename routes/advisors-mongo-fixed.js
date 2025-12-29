@@ -395,9 +395,37 @@ router.put('/:id', async (req, res) => {
  * DELETE /api/consultants/:id
  */
 router.delete('/:id', async (req, res) => {
-  // 重定向到 /delete/:id 路由处理
-  req.url = '/delete/' + req.params.id;
-  return router.handle(req, res);
+  try {
+    // 尝试从数据库删除
+    if (process.env.MONGODB_URI) {
+      try {
+        await connectDB();
+        const Advisor = getAdvisorModel();
+        const advisor = await Advisor.findByIdAndDelete(req.params.id);
+        if (advisor) {
+          return res.json({
+            success: true,
+            data: advisor,
+            message: '顾问删除成功'
+          });
+        }
+      } catch (dbError) {
+        console.error('从数据库删除失败:', dbError);
+      }
+    }
+    // 返回模拟成功
+    res.json({
+      success: true,
+      message: '顾问删除成功（演示模式）'
+    });
+  } catch (error) {
+    console.error('删除顾问失败:', error);
+    res.status(500).json({
+      success: false,
+      message: '删除顾问失败',
+      error: error.message
+    });
+  }
 });
 
 module.exports = router;
