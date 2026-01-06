@@ -167,7 +167,6 @@
                 <tr class="bg-gray-50">
                   <th class="border px-4 py-2">诊所名称</th>
                   <th class="border px-4 py-2">地区</th>
-                  <th class="border px-4 py-2">电话</th>
                   <th class="border px-4 py-2">评分</th>
                   <th class="border px-4 py-2">状态</th>
                   <th class="border px-4 py-2">操作</th>
@@ -177,7 +176,6 @@
                 <tr v-for="clinic in clinics" :key="clinic._id">
                   <td class="border px-4 py-2">{{ clinic.name }}</td>
                   <td class="border px-4 py-2">{{ clinic.district }}</td>
-                  <td class="border px-4 py-2">{{ clinic.phone }}</td>
                   <td class="border px-4 py-2">{{ clinic.rating }}</td>
                   <td class="border px-4 py-2">
                     <span :class="clinic.status === 'active' ? 'text-green-600' : 'text-red-600'">
@@ -487,6 +485,58 @@
             </div>
           </div>
 
+          <!-- 联系方式管理 -->
+          <div v-if="activeMenu === 'contact'" class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-2xl font-bold mb-6">联系方式管理</h2>
+            <p class="text-gray-500 mb-6">配置小程序咨询页面显示的联系方式</p>
+
+            <div class="space-y-6 max-w-xl">
+              <!-- 客服二维码 -->
+              <div>
+                <label class="block text-sm font-medium mb-2">客服二维码</label>
+                <p class="text-xs text-gray-500 mb-2">上传微信二维码图片，用户可扫码添加客服咨询</p>
+                <div v-if="contactConfig.qrCodeImage" class="mb-3 relative inline-block">
+                  <img :src="contactConfig.qrCodeImage" class="w-40 h-40 object-cover rounded border" />
+                  <button @click="deleteContactQrCode" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 text-sm">×</button>
+                </div>
+                <div v-else class="mb-3 w-40 h-40 border-2 border-dashed border-gray-300 rounded flex items-center justify-center text-gray-400">
+                  暂无二维码
+                </div>
+                <label class="cursor-pointer bg-pink-500 text-white px-4 py-2 rounded hover:bg-pink-600">
+                  <span v-if="!uploadingContactQrCode">上传二维码</span>
+                  <span v-else>上传中...</span>
+                  <input type="file" accept="image/*" @change="uploadContactQrCode" class="hidden" :disabled="uploadingContactQrCode">
+                </label>
+              </div>
+
+              <!-- 微信号 -->
+              <div>
+                <label class="block text-sm font-medium mb-1">客服微信号</label>
+                <input v-model="contactConfig.wechatId" class="w-full border rounded px-3 py-2" placeholder="输入客服微信号">
+                <p class="text-xs text-gray-400 mt-1">如果没有上传二维码，将显示微信号供用户复制</p>
+              </div>
+
+              <!-- 联系电话（可选） -->
+              <div>
+                <label class="block text-sm font-medium mb-1">联系电话（可选）</label>
+                <input v-model="contactConfig.phone" class="w-full border rounded px-3 py-2" placeholder="输入联系电话">
+              </div>
+
+              <!-- 工作时间 -->
+              <div>
+                <label class="block text-sm font-medium mb-1">在线服务时间</label>
+                <input v-model="contactConfig.workTime" class="w-full border rounded px-3 py-2" placeholder="如：10:00-22:00">
+              </div>
+
+              <!-- 保存按钮 -->
+              <div class="pt-4">
+                <button @click="saveContactConfig" class="bg-green-500 text-white px-6 py-2 rounded hover:bg-green-600">
+                  保存配置
+                </button>
+              </div>
+            </div>
+          </div>
+
           <!-- 轮播图管理 -->
           <div v-if="activeMenu === 'banners'" class="bg-white rounded-lg shadow p-6">
             <h2 class="text-2xl font-bold mb-6">轮播图管理</h2>
@@ -648,15 +698,7 @@
               <h4 class="text-lg font-semibold mb-3 mt-4 text-blue-600">联系方式</h4>
             </div>
 
-            <div>
-              <label class="block text-sm font-medium mb-1">联系电话</label>
-              <input v-model="editingClinic.phone" class="w-full border rounded px-3 py-2" placeholder="02-1234-5678">
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium mb-1">官网地址</label>
-              <input v-model="editingClinic.website" class="w-full border rounded px-3 py-2" placeholder="https://...">
-            </div>
+            <!-- 联系电话和官网地址已移除 -->
 
             <div>
               <label class="block text-sm font-medium mb-1">微信号</label>
@@ -758,6 +800,41 @@
                 <span v-else>上传中...</span>
               </label>
               <p class="text-xs text-gray-500 mt-1">支持上传多张图片</p>
+            </div>
+
+            <!-- 前后对比图 -->
+            <div class="col-span-2">
+              <label class="block text-sm font-medium mb-1">前后对比图</label>
+              <p class="text-xs text-gray-500 mb-2">上传服务前后对比图片，将在小程序诊所详情页展示</p>
+              <div v-if="editingClinic.beforeAfterImages && editingClinic.beforeAfterImages.length > 0" class="flex flex-wrap gap-2 mb-2">
+                <div v-for="(img, index) in editingClinic.beforeAfterImages" :key="index" class="relative">
+                  <img :src="img" class="w-32 h-24 object-cover rounded border" />
+                  <span @click="removeBeforeAfterImage(index)" class="absolute -top-2 -right-2 bg-red-500 text-white w-5 h-5 rounded-full flex items-center justify-center cursor-pointer text-xs">×</span>
+                </div>
+              </div>
+              <label class="cursor-pointer bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600 inline-flex items-center">
+                <input type="file" class="hidden" accept="image/*" @change="uploadBeforeAfterImage" multiple>
+                <span v-if="!uploadingBeforeAfterImage">添加对比图</span>
+                <span v-else>上传中...</span>
+              </label>
+              <p class="text-xs text-gray-500 mt-1">支持上传多张图片</p>
+            </div>
+
+            <!-- 联系二维码 -->
+            <div class="col-span-2">
+              <label class="block text-sm font-medium mb-1">联系二维码</label>
+              <p class="text-xs text-gray-500 mb-2">上传微信二维码图片，用户可扫码添加联系（替代微信号显示）</p>
+              <div v-if="editingClinic.qrCodeImage" class="mb-2 relative inline-block">
+                <img :src="editingClinic.qrCodeImage" class="w-32 h-32 object-cover rounded border" />
+                <span @click="removeQrCode" class="absolute -top-2 -right-2 bg-red-500 text-white w-5 h-5 rounded-full flex items-center justify-center cursor-pointer text-xs">×</span>
+              </div>
+              <div v-else>
+                <label class="cursor-pointer bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600 inline-flex items-center">
+                  <input type="file" class="hidden" accept="image/*" @change="uploadQrCode">
+                  <span v-if="!uploadingQrCode">上传二维码</span>
+                  <span v-else>上传中...</span>
+                </label>
+              </div>
             </div>
 
             <!-- 特色和状态 -->

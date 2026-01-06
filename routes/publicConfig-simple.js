@@ -373,6 +373,57 @@ router.get('/banners', async (req, res) => {
 });
 
 /**
+ * 获取联系方式配置（公开接口，小程序用）
+ * GET /api/config/contact
+ */
+// 联系方式配置存储
+let contactConfigStore = {
+  qrCodeImage: '',  // 客服二维码图片URL
+  wechatId: 'xiaohanmeimei_service',  // 客服微信号
+  phone: '',  // 联系电话（可选）
+  workTime: '10:00-22:00'  // 工作时间
+};
+
+router.get('/contact', async (req, res) => {
+  try {
+    res.json({
+      success: true,
+      data: contactConfigStore
+    });
+  } catch (error) {
+    console.error('获取联系方式配置失败:', error);
+    res.status(500).json({
+      success: false,
+      message: '获取联系方式配置失败'
+    });
+  }
+});
+
+// 更新联系方式配置（需要管理员权限）
+router.post('/contact', async (req, res) => {
+  try {
+    const { qrCodeImage, wechatId, phone, workTime } = req.body;
+
+    if (qrCodeImage !== undefined) contactConfigStore.qrCodeImage = qrCodeImage;
+    if (wechatId !== undefined) contactConfigStore.wechatId = wechatId;
+    if (phone !== undefined) contactConfigStore.phone = phone;
+    if (workTime !== undefined) contactConfigStore.workTime = workTime;
+
+    res.json({
+      success: true,
+      data: contactConfigStore,
+      message: '联系方式配置已更新'
+    });
+  } catch (error) {
+    console.error('更新联系方式配置失败:', error);
+    res.status(500).json({
+      success: false,
+      message: '更新联系方式配置失败'
+    });
+  }
+});
+
+/**
  * 获取服务分类（公开接口，小程序用）
  * GET /api/config/categories
  */

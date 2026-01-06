@@ -24,8 +24,18 @@ const app = createApp({
         { id: 'banners', name: '轮播图管理' },
         { id: 'services', name: '服务项目管理' },
         { id: 'appointments', name: '预约管理' },
-        { id: 'reviews', name: '评价管理' }
+        { id: 'reviews', name: '评价管理' },
+        { id: 'contact', name: '联系方式管理' }
       ],
+
+      // 联系方式配置
+      contactConfig: {
+        qrCodeImage: '',
+        wechatId: '',
+        phone: '',
+        workTime: '10:00-22:00'
+      },
+      uploadingContactQrCode: false,
 
       // 热门搜索
       hotSearches: [],
@@ -54,11 +64,15 @@ const app = createApp({
         featured: false,
         logo: '',
         priceImage: '',
-        certificationImages: []
+        certificationImages: [],
+        beforeAfterImages: [],
+        qrCodeImage: ''
       },
       uploadingLogo: false,  // Logo上传中状态
       uploadingPriceImage: false,  // 价格图片上传中状态
       uploadingCertImage: false,  // 资质图片上传中状态
+      uploadingBeforeAfterImage: false,  // 前后对比图上传中状态
+      uploadingQrCode: false,  // 二维码上传中状态
 
       // 陪同顾问管理
       consultants: [],
@@ -69,8 +83,8 @@ const app = createApp({
       banners: [],
 
       // 预设选项
-      specialtyOptions: ['皮肤管理', '整形手术', '填充', '激光治疗', '身体塑形', '抗衰老', '眼部整形', '鼻部整形', '面部轮廓', '胸部整形', '毛发移植', '牙齿美容'],
-      tagOptions: ['中文服务', '价格优惠', '性价比', '推荐', 'VIP服务', '24小时服务', '免费咨询', '术后护理', '明星医院', '网红打卡', '一对一', '流水线', '专科'],
+      specialtyOptions: ['皮肤管理', '整形手术', '填充', '激光治疗', '身体塑形', '抗衰老', '眼部整形', '鼻部整形', '面部轮廓', '胸部整形', '毛发移植', '牙齿美容', '皮肤治疗', '女性私密', '眼科'],
+      tagOptions: ['中文服务', '价格优惠', '性价比', '推荐', 'VIP服务', '24小时服务', '免费咨询', '术后护理', '明星医院', '网红打卡', '一对一', '流水线', '专科', '整外'],
 
       // 服务项目管理
       services: [],
@@ -143,6 +157,8 @@ const app = createApp({
       console.log('Validating existing token...');
       // 尝试加载数据，如果token无效会失败
       await this.loadHotSearches();
+      // 加载联系方式配置
+      await this.loadContactConfig();
       console.log('Token is valid, continuing...');
     } catch (error) {
       console.log('Token invalid, showing login');
@@ -715,6 +731,101 @@ const app = createApp({
       }
     },
 
+    // 上传前后对比图
+    async uploadBeforeAfterImage(event) {
+      const files = event.target.files;
+      if (!files || files.length === 0) return;
+
+      this.uploadingBeforeAfterImage = true;
+
+      try {
+        if (!this.editingClinic.beforeAfterImages) {
+          this.editingClinic.beforeAfterImages = [];
+        }
+
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+
+          if (!file.type.startsWith('image/')) {
+            continue;
+          }
+
+          if (file.size > 10 * 1024 * 1024) {
+            alert(`图片 ${file.name} 超过10MB，已跳过`);
+            continue;
+          }
+
+          const base64 = await this.fileToBase64(file);
+          const result = await this.apiRequest('POST', '/upload/image', {
+            image: base64,
+            folder: 'clinic-before-after',
+            filename: `ba-${Date.now()}-${i}.${file.name.split('.').pop()}`
+          });
+
+          if (result.success) {
+            this.editingClinic.beforeAfterImages.push(result.data.url);
+            console.log('前后对比图上传成功:', result.data.url);
+          }
+        }
+      } catch (error) {
+        console.error('上传前后对比图失败:', error);
+        alert('上传失败，请重试');
+      } finally {
+        this.uploadingBeforeAfterImage = false;
+        event.target.value = '';
+      }
+    },
+
+    // 删除前后对比图
+    removeBeforeAfterImage(index) {
+      if (this.editingClinic.beforeAfterImages) {
+        this.editingClinic.beforeAfterImages.splice(index, 1);
+      }
+    },
+
+    // 上传二维码图片
+    async uploadQrCode(event) {
+      const file = event.target.files?.[0];
+      if (!file) return;
+
+      if (!file.type.startsWith('image/')) {
+        alert('请选择图片文件');
+        return;
+      }
+
+      if (file.size > 5 * 1024 * 1024) {
+        alert('图片大小不能超过5MB');
+        return;
+      }
+
+      this.uploadingQrCode = true;
+
+      try {
+        const base64 = await this.fileToBase64(file);
+        const result = await this.apiRequest('POST', '/upload/image', {
+          image: base64,
+          folder: 'clinic-qrcodes',
+          filename: `qr-${Date.now()}.${file.name.split('.').pop()}`
+        });
+
+        if (result.success) {
+          this.editingClinic.qrCodeImage = result.data.url;
+          console.log('二维码上传成功:', result.data.url);
+        }
+      } catch (error) {
+        console.error('上传二维码失败:', error);
+        alert('上传失败，请重试');
+      } finally {
+        this.uploadingQrCode = false;
+        event.target.value = '';
+      }
+    },
+
+    // 删除二维码
+    removeQrCode() {
+      this.editingClinic.qrCodeImage = '';
+    },
+
     // 专长领域选择相关方法
     isSpecialtySelected(specialty) {
       if (!this.editingClinic || !this.editingClinic.specialties) return false;
@@ -1083,62 +1194,36 @@ const app = createApp({
     // 加载预约数据
     async loadAppointments() {
       try {
-        // Mock预约数据
-        this.appointments = [
-          {
-            id: 'APT001',
-            customerName: '李小明',
-            phone: '010-12345678',
-            clinicName: 'Seoul Beauty Clinic',
-            serviceName: '双眼皮手术',
-            appointmentTime: new Date('2025-02-01 14:00'),
-            status: 'pending',
-            createTime: new Date('2025-01-28')
-          },
-          {
-            id: 'APT002',
-            customerName: '王美丽',
-            phone: '010-87654321',
-            clinicName: 'Gangnam Medical Center',
-            serviceName: '玻尿酸注射',
-            appointmentTime: new Date('2025-02-02 10:00'),
-            status: 'confirmed',
-            createTime: new Date('2025-01-27')
-          },
-          {
-            id: 'APT003',
-            customerName: '张小花',
-            phone: '010-55551234',
-            clinicName: 'Seoul Beauty Clinic',
-            serviceName: '激光美白',
-            appointmentTime: new Date('2025-01-30 15:30'),
-            status: 'completed',
-            createTime: new Date('2025-01-25')
-          },
-          {
-            id: 'APT004',
-            customerName: '赵先生',
-            phone: '010-99998888',
-            clinicName: 'Test Beauty Clinic',
-            serviceName: '皮肤管理',
-            appointmentTime: new Date('2025-02-03 11:00'),
-            status: 'pending',
-            createTime: new Date('2025-01-28')
-          },
-          {
-            id: 'APT005',
-            customerName: '刘女士',
-            phone: '010-66667777',
-            clinicName: 'Gangnam Medical Center',
-            serviceName: '水光针',
-            appointmentTime: new Date('2025-01-31 09:00'),
-            status: 'cancelled',
-            createTime: new Date('2025-01-26')
+        const response = await fetch(`${this.apiBase}/api/appointments?limit=100`, {
+          headers: {
+            'Authorization': `Bearer ${this.token}`
           }
-        ];
-        console.log('预约数据加载成功，共', this.appointments.length, '条');
+        });
+        const result = await response.json();
+
+        if (result.success && result.data && result.data.appointments) {
+          // 映射API返回的字段到前端期望的字段名
+          this.appointments = result.data.appointments.map(apt => ({
+            id: apt._id || apt.id || apt.appointmentId,
+            customerName: apt.userName || apt.customerName || '未知',
+            phone: apt.userPhone || apt.phone || '未提供',
+            clinicName: apt.clinicName || '未指定',
+            serviceName: apt.service || apt.serviceName || '未指定',
+            appointmentTime: apt.appointmentDate && apt.appointmentTime
+              ? new Date(`${apt.appointmentDate} ${apt.appointmentTime.split('-')[0]}`)
+              : new Date(apt.appointmentTime || apt.createTime),
+            status: apt.status || 'pending',
+            createTime: new Date(apt.createTime || apt.submitTime || Date.now()),
+            notes: apt.notes || ''
+          }));
+          console.log('预约数据加载成功，共', this.appointments.length, '条');
+        } else {
+          console.log('API返回空数据，使用空列表');
+          this.appointments = [];
+        }
       } catch (error) {
         console.error('加载预约失败:', error);
+        this.appointments = [];
       }
     },
 
@@ -1182,17 +1267,31 @@ const app = createApp({
 
     // 更新预约状态
     async updateAppointmentStatus(id, newStatus) {
-      const appointment = this.appointments.find(a => a.id === id);
-      if (appointment) {
-        appointment.status = newStatus;
+      try {
+        const response = await fetch(`${this.apiBase}/api/appointments/${id}/status`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${this.token}`
+          },
+          body: JSON.stringify({ status: newStatus })
+        });
+        const result = await response.json();
 
-        // 模拟保存到后端
-        try {
+        if (result.success) {
+          // 更新本地数据
+          const appointment = this.appointments.find(a => a.id === id);
+          if (appointment) {
+            appointment.status = newStatus;
+          }
           console.log(`更新预约 ${id} 状态为 ${newStatus}`);
           alert(`预约状态已更新为：${this.getStatusLabel(newStatus)}`);
-        } catch (error) {
-          console.error('更新预约状态失败:', error);
+        } else {
+          alert('更新失败：' + (result.message || '未知错误'));
         }
+      } catch (error) {
+        console.error('更新预约状态失败:', error);
+        alert('更新失败，请重试');
       }
     },
 
@@ -1214,6 +1313,81 @@ const app = createApp({
       } catch (error) {
         console.error('保存失败:', error);
       }
+    },
+
+    // 加载联系方式配置
+    async loadContactConfig() {
+      try {
+        const response = await fetch(`${this.apiBase}/api/config/contact`);
+        const result = await response.json();
+        if (result.success && result.data) {
+          this.contactConfig = result.data;
+        }
+      } catch (error) {
+        console.error('加载联系方式配置失败:', error);
+      }
+    },
+
+    // 保存联系方式配置
+    async saveContactConfig() {
+      try {
+        const response = await fetch(`${this.apiBase}/api/config/contact`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${this.token}`
+          },
+          body: JSON.stringify(this.contactConfig)
+        });
+        const result = await response.json();
+        if (result.success) {
+          alert('联系方式配置保存成功！');
+        } else {
+          alert('保存失败：' + (result.message || '未知错误'));
+        }
+      } catch (error) {
+        console.error('保存联系方式配置失败:', error);
+        alert('保存失败，请重试');
+      }
+    },
+
+    // 上传客服二维码
+    async uploadContactQrCode(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      this.uploadingContactQrCode = true;
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('type', 'contact_qrcode');
+
+      try {
+        const response = await fetch(`${this.apiBase}/api/upload`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${this.token}`
+          },
+          body: formData
+        });
+        const result = await response.json();
+        if (result.success && result.data && result.data.url) {
+          this.contactConfig.qrCodeImage = result.data.url;
+          console.log('客服二维码上传成功:', result.data.url);
+        } else {
+          alert('上传失败：' + (result.message || '未知错误'));
+        }
+      } catch (error) {
+        console.error('上传客服二维码失败:', error);
+        alert('上传失败，请重试');
+      } finally {
+        this.uploadingContactQrCode = false;
+        event.target.value = '';
+      }
+    },
+
+    // 删除客服二维码
+    deleteContactQrCode() {
+      this.contactConfig.qrCodeImage = '';
     },
 
     // 加载评价数据
