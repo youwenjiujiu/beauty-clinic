@@ -1,4 +1,5 @@
 const router = require('express').Router();
+const Config = require('../models/Config');
 
 /**
  * 获取应用运行模式（公开接口）
@@ -375,9 +376,11 @@ router.get('/banners', async (req, res) => {
 /**
  * 获取联系方式配置（公开接口，小程序用）
  * GET /api/config/contact
+ *
+ * 数据持久化到MongoDB
  */
-// 联系方式配置存储
-let contactConfigStore = {
+// 默认联系方式配置
+const defaultContactConfig = {
   qrCodeImage: '',  // 客服二维码图片URL
   wechatId: 'xiaohanmeimei_service',  // 客服微信号
   phone: '',  // 联系电话（可选）
@@ -386,15 +389,27 @@ let contactConfigStore = {
 
 router.get('/contact', async (req, res) => {
   try {
-    res.json({
-      success: true,
-      data: contactConfigStore
-    });
+    // 从数据库获取联系方式配置
+    let config = await Config.findOne({ type: 'contact_info' });
+
+    if (config && config.content) {
+      res.json({
+        success: true,
+        data: config.content
+      });
+    } else {
+      // 没有配置时返回默认值
+      res.json({
+        success: true,
+        data: defaultContactConfig
+      });
+    }
   } catch (error) {
     console.error('获取联系方式配置失败:', error);
-    res.status(500).json({
-      success: false,
-      message: '获取联系方式配置失败'
+    // 出错时返回默认配置
+    res.json({
+      success: true,
+      data: defaultContactConfig
     });
   }
 });
@@ -404,21 +419,39 @@ router.post('/contact', async (req, res) => {
   try {
     const { qrCodeImage, wechatId, phone, workTime } = req.body;
 
-    if (qrCodeImage !== undefined) contactConfigStore.qrCodeImage = qrCodeImage;
-    if (wechatId !== undefined) contactConfigStore.wechatId = wechatId;
-    if (phone !== undefined) contactConfigStore.phone = phone;
-    if (workTime !== undefined) contactConfigStore.workTime = workTime;
+    // 构建更新内容
+    const contactData = {
+      qrCodeImage: qrCodeImage || '',
+      wechatId: wechatId || 'xiaohanmeimei_service',
+      phone: phone || '',
+      workTime: workTime || '10:00-22:00'
+    };
+
+    // 使用upsert保存到数据库
+    const config = await Config.findOneAndUpdate(
+      { type: 'contact_info' },
+      {
+        type: 'contact_info',
+        name: '联系方式配置',
+        content: contactData,
+        isActive: true,
+        updatedAt: new Date()
+      },
+      { upsert: true, new: true }
+    );
+
+    console.log('联系方式配置已保存到数据库:', contactData.qrCodeImage ? '有二维码' : '无二维码');
 
     res.json({
       success: true,
-      data: contactConfigStore,
-      message: '联系方式配置已更新'
+      data: config.content,
+      message: '联系方式配置已更新并持久化'
     });
   } catch (error) {
     console.error('更新联系方式配置失败:', error);
     res.status(500).json({
       success: false,
-      message: '更新联系方式配置失败'
+      message: '更新联系方式配置失败: ' + error.message
     });
   }
 });
