@@ -1353,26 +1353,33 @@ const app = createApp({
 
     // 上传客服二维码
     async uploadContactQrCode(event) {
-      const file = event.target.files[0];
+      const file = event.target.files?.[0];
       if (!file) return;
 
+      if (!file.type.startsWith('image/')) {
+        alert('请选择图片文件');
+        return;
+      }
+
+      if (file.size > 5 * 1024 * 1024) {
+        alert('图片大小不能超过5MB');
+        return;
+      }
+
       this.uploadingContactQrCode = true;
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('type', 'contact_qrcode');
 
       try {
-        const response = await fetch(`${this.apiBase}/api/upload`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${this.token}`
-          },
-          body: formData
+        const base64 = await this.fileToBase64(file);
+        const result = await this.apiRequest('POST', '/upload/image', {
+          image: base64,
+          folder: 'contact-qrcodes',
+          filename: `contact-qr-${Date.now()}.${file.name.split('.').pop()}`
         });
-        const result = await response.json();
+
         if (result.success && result.data && result.data.url) {
           this.contactConfig.qrCodeImage = result.data.url;
           console.log('客服二维码上传成功:', result.data.url);
+          alert('上传成功！记得点击"保存配置"');
         } else {
           alert('上传失败：' + (result.message || '未知错误'));
         }
