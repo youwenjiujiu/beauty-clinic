@@ -309,14 +309,14 @@
                   <td class="border px-4 py-2">
                     <button
                       v-if="appointment.status === 'pending'"
-                      @click="updateAppointmentStatus(appointment.id, 'confirmed')"
+                      @click="showProcessModal(appointment, 'confirm')"
                       class="text-green-500 hover:underline mr-2"
                     >
                       确认
                     </button>
                     <button
                       v-if="appointment.status === 'pending' || appointment.status === 'confirmed'"
-                      @click="updateAppointmentStatus(appointment.id, 'cancelled')"
+                      @click="showProcessModal(appointment, 'cancel')"
                       class="text-red-500 hover:underline mr-2"
                     >
                       取消
@@ -335,6 +335,57 @@
 
             <div v-if="filteredAppointments.length === 0" class="text-center py-8 text-gray-500">
               暂无{{ getStatusLabel(selectedAppointmentStatus) }}的预约
+            </div>
+          </div>
+
+          <!-- 预约处理弹窗 -->
+          <div v-if="showAppointmentProcessModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-lg p-6 w-full max-w-md">
+              <h3 class="text-xl font-bold mb-4">
+                {{ processingAction === 'confirm' ? '确认预约' : '取消预约' }}
+              </h3>
+
+              <!-- 预约信息 -->
+              <div class="bg-gray-50 p-4 rounded mb-4" v-if="processingAppointment">
+                <p><span class="font-medium">客户：</span>{{ processingAppointment.customerName }}</p>
+                <p><span class="font-medium">服务：</span>{{ processingAppointment.serviceName }}</p>
+                <p><span class="font-medium">时间：</span>{{ formatDate(processingAppointment.appointmentTime) }}</p>
+              </div>
+
+              <!-- 备注/原因输入 -->
+              <div class="mb-4">
+                <label class="block text-sm font-medium mb-2">
+                  {{ processingAction === 'confirm' ? '备注信息（可选）' : '取消原因（将通知客户）' }}
+                </label>
+                <textarea
+                  v-model="processRemark"
+                  class="w-full border rounded px-3 py-2"
+                  rows="3"
+                  :placeholder="processingAction === 'confirm' ? '如：请准时到店' : '如：该时段已满，请选择其他时间'"
+                ></textarea>
+              </div>
+
+              <!-- 通知选项 -->
+              <div class="mb-4">
+                <label class="flex items-center">
+                  <input type="checkbox" v-model="sendNotification" class="mr-2">
+                  <span class="text-sm">发送微信通知给客户</span>
+                </label>
+                <p class="text-xs text-gray-500 mt-1">勾选后将通过微信订阅消息通知客户预约结果</p>
+              </div>
+
+              <!-- 按钮 -->
+              <div class="flex justify-end space-x-2">
+                <button @click="closeProcessModal" class="px-4 py-2 border rounded hover:bg-gray-100">
+                  取消
+                </button>
+                <button
+                  @click="confirmProcessAppointment"
+                  :class="['px-4 py-2 rounded text-white', processingAction === 'confirm' ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600']"
+                >
+                  {{ processingAction === 'confirm' ? '确认预约' : '确认取消' }}
+                </button>
+              </div>
             </div>
           </div>
 

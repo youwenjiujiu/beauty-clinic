@@ -105,6 +105,13 @@ const app = createApp({
       ],
       selectedAppointmentStatus: 'all',
 
+      // 预约处理弹窗
+      showAppointmentProcessModal: false,
+      processingAppointment: null,
+      processingAction: '', // 'confirm' or 'cancel'
+      processRemark: '',
+      sendNotification: true,
+
       // 评价管理
       reviews: [],
       reviewStatuses: [
@@ -1212,9 +1219,12 @@ const app = createApp({
             appointmentTime: apt.appointmentDate && apt.appointmentTime
               ? new Date(`${apt.appointmentDate} ${apt.appointmentTime.split('-')[0]}`)
               : new Date(apt.appointmentTime || apt.createTime),
+            appointmentDate: apt.appointmentDate || '',
+            appointmentTimeSlot: apt.appointmentTime || '',
             status: apt.status || 'pending',
             createTime: new Date(apt.createTime || apt.submitTime || Date.now()),
-            notes: apt.notes || ''
+            notes: apt.notes || '',
+            userOpenId: apt.userOpenId || apt.userId || ''  // 用于发送通知
           }));
           console.log('预约数据加载成功，共', this.appointments.length, '条');
         } else {
@@ -1265,7 +1275,108 @@ const app = createApp({
       return this.appointments.filter(a => a.status === status).length;
     },
 
-    // 更新预约状态
+    // 显示预约处理弹窗
+    showProcessModal(appointment, action) {
+      this.processingAppointment = appointment;
+      this.processingAction = action;
+      this.processRemark = '';
+      this.sendNotification = true;
+      this.showAppointmentProcessModal = true;
+    },
+
+    // 关闭预约处理弹窗
+    closeProcessModal() {
+      this.showAppointmentProcessModal = false;
+      this.processingAppointment = null;
+      this.processingAction = '';
+      this.processRemark = '';
+    },
+
+    // 确认处理预约
+    async confirmProcessAppointment() {
+      if (!this.processingAppointment) return;
+
+      const newStatus = this.processingAction === 'confirm' ? 'confirmed' : 'cancelled';
+      const id = this.processingAppointment.id;
+
+      try {
+        // 1. 更新预约状态
+        const response = await fetch(`${this.apiBase}/api/appointments/${id}/status`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${this.token}`
+          },
+          body: JSON.stringify({
+            status: newStatus,
+            remark: this.processRemark
+          })
+        });
+        const result = await response.json();
+
+        if (result.success) {
+          // 2. 如果勾选了发送通知，且有用户OpenID，发送通知
+          if (this.sendNotification && this.processingAppointment.userOpenId) {
+            await this.sendUserNotification(this.processingAppointment, newStatus, this.processRemark);
+          }
+
+          // 3. 更新本地数据
+          const appointment = this.appointments.find(a => a.id === id);
+          if (appointment) {
+            appointment.status = newStatus;
+          }
+
+          console.log(`更新预约 ${id} 状态为 ${newStatus}`);
+          alert(`预约已${this.processingAction === 'confirm' ? '确认' : '取消'}${this.sendNotification ? '，已发送通知给客户' : ''}`);
+
+          // 关闭弹窗
+          this.closeProcessModal();
+        } else {
+          alert('更新失败：' + (result.message || '未知错误'));
+        }
+      } catch (error) {
+        console.error('更新预约状态失败:', error);
+        alert('更新失败，请重试');
+      }
+    },
+
+    // 发送用户通知
+    async sendUserNotification(appointment, status, remark) {
+      try {
+        const notificationData = {
+          userOpenId: appointment.userOpenId,
+          userName: appointment.customerName,
+          status: status,
+          clinicName: appointment.clinicName,
+          appointmentDate: appointment.appointmentDate || this.formatDate(appointment.appointmentTime).split(' ')[0],
+          appointmentTime: appointment.appointmentTimeSlot || this.formatDate(appointment.appointmentTime).split(' ')[1] || '',
+          remark: remark
+        };
+
+        console.log('发送用户通知:', notificationData);
+
+        const response = await fetch(`${this.apiBase}/api/notifications/user-result`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${this.token}`
+          },
+          body: JSON.stringify(notificationData)
+        });
+
+        const result = await response.json();
+        if (result.success) {
+          console.log('用户通知发送成功');
+        } else {
+          console.warn('用户通知发送失败:', result.message);
+        }
+      } catch (error) {
+        console.error('发送用户通知失败:', error);
+        // 不阻塞主流程
+      }
+    },
+
+    // 更新预约状态（简单版，用于完成操作）
     async updateAppointmentStatus(id, newStatus) {
       try {
         const response = await fetch(`${this.apiBase}/api/appointments/${id}/status`, {

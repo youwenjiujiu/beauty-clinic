@@ -241,4 +241,79 @@ router.post('/test', async (req, res) => {
   }
 });
 
+/**
+ * 发送预约处理结果给用户
+ * POST /api/notifications/user-result
+ */
+router.post('/user-result', async (req, res) => {
+  try {
+    const {
+      userOpenId,      // 用户的OpenID
+      userName,        // 用户姓名
+      status,          // 状态：confirmed/cancelled
+      clinicName,      // 机构名称
+      appointmentDate, // 预约日期
+      appointmentTime, // 预约时间
+      remark           // 备注/拒绝原因
+    } = req.body;
+
+    console.log('发送预约结果通知给用户:', req.body);
+
+    if (!userOpenId) {
+      return res.json({ success: false, message: '缺少用户OpenID' });
+    }
+
+    const accessToken = await getWechatAccessToken();
+    if (!accessToken) {
+      return res.json({ success: false, message: 'Access Token获取失败' });
+    }
+
+    // 使用用户的预约通知模板
+    const templateId = process.env.USER_NOTIFICATION_TEMPLATE_ID || process.env.NOTIFICATION_TEMPLATE_ID;
+
+    if (!templateId) {
+      return res.json({ success: false, message: '未配置模板ID' });
+    }
+
+    // 构建状态文字
+    const statusText = status === 'confirmed' ? '✓ 已确认' : '✗ 已取消';
+    const locationText = `${statusText} - ${clinicName || '服务中心'}`;
+
+    // 时间+备注
+    let timeText = `${appointmentDate} ${appointmentTime}`;
+    if (remark && status !== 'confirmed') {
+      timeText = remark.substring(0, 20); // 备注放在这里
+    }
+
+    const notificationData = {
+      touser: userOpenId,
+      template_id: templateId,
+      page: '/pages/user/orders', // 用户点击跳转到订单页
+      data: {
+        thing1: { value: (userName || '顾客').substring(0, 20) },           // 预约人
+        thing2: { value: locationText.substring(0, 20) },                    // 预约地点（显示状态）
+        time3: { value: `${appointmentDate} ${appointmentTime}` }           // 预约时间
+      }
+    };
+
+    console.log('发送通知数据:', JSON.stringify(notificationData, null, 2));
+
+    const result = await sendSubscribeMessage(accessToken, notificationData);
+
+    res.json({
+      success: true,
+      message: '用户通知发送成功',
+      result
+    });
+
+  } catch (error) {
+    console.error('发送用户通知失败:', error);
+    res.json({
+      success: false,
+      message: '通知发送失败',
+      error: error.message
+    });
+  }
+});
+
 module.exports = router;
