@@ -3,19 +3,20 @@ const mongoose = require('mongoose');
 const reviewSchema = new mongoose.Schema({
   // 关联信息
   userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
+    type: mongoose.Schema.Types.Mixed, // 支持 ObjectId 或字符串
+    ref: 'User'
   },
+  userName: String, // 用户昵称（无门槛评价用）
+  userAvatar: String, // 用户头像（无门槛评价用）
   clinicId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Clinic',
-    required: true
+    type: mongoose.Schema.Types.Mixed, // 支持 ObjectId 或字符串
+    ref: 'Clinic'
   },
+  clinicName: String, // 诊所名称（无门槛评价用）
   appointmentId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Appointment',
-    required: true
+    ref: 'Appointment'
+    // 不再必填，无门槛评价不需要
   },
   serviceType: String,
 
@@ -133,22 +134,31 @@ reviewSchema.index({ 'rating.overall': -1 });
 
 // 中间件：更新诊所评分
 reviewSchema.post('save', async function(doc) {
-  const Review = this.constructor;
-  const Clinic = mongoose.model('Clinic');
+  // 如果没有有效的clinicId，跳过评分更新
+  if (!doc.clinicId || typeof doc.clinicId === 'string') {
+    return;
+  }
 
-  // 计算诊所平均分
-  const reviews = await Review.find({
-    clinicId: doc.clinicId,
-    status: 'approved'
-  });
+  try {
+    const Review = this.constructor;
+    const Clinic = mongoose.model('Clinic');
 
-  if (reviews.length > 0) {
-    const avgRating = reviews.reduce((sum, r) => sum + r.rating.overall, 0) / reviews.length;
-
-    await Clinic.findByIdAndUpdate(doc.clinicId, {
-      rating: Math.round(avgRating * 10) / 10,
-      reviewCount: reviews.length
+    // 计算诊所平均分
+    const reviews = await Review.find({
+      clinicId: doc.clinicId,
+      status: 'approved'
     });
+
+    if (reviews.length > 0) {
+      const avgRating = reviews.reduce((sum, r) => sum + r.rating.overall, 0) / reviews.length;
+
+      await Clinic.findByIdAndUpdate(doc.clinicId, {
+        rating: Math.round(avgRating * 10) / 10,
+        reviewCount: reviews.length
+      });
+    }
+  } catch (error) {
+    console.error('更新诊所评分失败:', error);
   }
 });
 

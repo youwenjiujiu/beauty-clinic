@@ -2,13 +2,88 @@ const router = require('express').Router();
 const Review = require('../models/Review');
 const Appointment = require('../models/Appointment');
 const Clinic = require('../models/Clinic');
-const { verifyToken } = require('../middleware/auth');
+const { verifyToken, optionalAuth } = require('../middleware/auth');
 
 /**
- * 创建评价
+ * 创建评价（无门槛版本）
  * POST /api/reviews
+ * 任何人都可以提交评价，无需预约
  */
-router.post('/', verifyToken, async (req, res) => {
+router.post('/', optionalAuth, async (req, res) => {
+  try {
+    const {
+      clinicId,
+      clinicName,
+      userId,
+      userName,
+      userAvatar,
+      rating,
+      content,
+      images,
+      serviceType
+    } = req.body;
+
+    // 基本验证
+    if (!content || content.trim().length < 10) {
+      return res.status(400).json({
+        success: false,
+        message: '评价内容至少需要10个字'
+      });
+    }
+
+    if (!rating || rating < 1 || rating > 5) {
+      return res.status(400).json({
+        success: false,
+        message: '请选择有效的评分'
+      });
+    }
+
+    // 创建评价
+    const review = new Review({
+      userId: userId || (req.user ? req.user.userId : 'anonymous'),
+      userName: userName || '匿名用户',
+      userAvatar: userAvatar || '/images/default-avatar.png',
+      clinicId: clinicId || null,
+      clinicName: clinicName || '未知机构',
+      serviceType: serviceType || '服务体验',
+      rating: {
+        overall: rating,
+        service: rating,
+        environment: rating,
+        effect: rating
+      },
+      content: content.trim(),
+      images: images || [],
+      isAnonymous: !userName || userName === '匿名用户',
+      isVerified: false, // 非预约用户的评价标记为未验证
+      tags: [],
+      status: 'pending' // 待审核
+    });
+
+    await review.save();
+
+    res.json({
+      success: true,
+      message: '评价提交成功，等待审核',
+      data: {
+        id: review._id,
+        status: review.status
+      }
+    });
+  } catch (error) {
+    console.error('创建评价失败:', error);
+    res.status(500).json({
+      success: false,
+      message: '提交评价失败'
+    });
+  }
+});
+
+/**
+ * 创建评价（需要预约验证的版本）
+ * POST /api/reviews/verified
+ */
+router.post('/verified', verifyToken, async (req, res) => {
   try {
     const {
       appointmentId,
