@@ -57,7 +57,7 @@ router.post('/', optionalAuth, async (req, res) => {
       isAnonymous: !userName || userName === '匿名用户',
       isVerified: false, // 非预约用户的评价标记为未验证
       tags: [],
-      status: 'pending' // 待审核
+      status: 'approved' // 直接通过，无需审核
     });
 
     await review.save();
@@ -86,17 +86,17 @@ router.post('/', optionalAuth, async (req, res) => {
 router.get('/clinic/:clinicId', async (req, res) => {
   try {
     const { clinicId } = req.params;
-    const { page = 1, limit = 20, status = 'approved' } = req.query;
+    const { page = 1, limit = 20 } = req.query;
 
     const skip = (page - 1) * limit;
 
-    // 查询条件：按clinicId或clinicName匹配
+    // 查询条件：按clinicId或clinicName匹配，显示已审核和待审核的评价
     const query = {
       $or: [
         { clinicId: clinicId },
         { clinicName: { $regex: clinicId, $options: 'i' } }
       ],
-      status: status
+      status: { $in: ['approved', 'pending'] } // 显示已审核和待审核的评价
     };
 
     const reviews = await Review
