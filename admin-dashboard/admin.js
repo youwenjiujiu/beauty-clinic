@@ -1565,84 +1565,35 @@ const app = createApp({
     // 加载评价数据
     async loadReviews() {
       try {
-        // Mock评价数据
-        this.reviews = [
-          {
-            id: 'REV001',
-            customerName: '张小美',
-            clinicName: 'Seoul Beauty Clinic',
-            serviceName: '双眼皮手术',
-            rating: 5,
-            content: '医生技术非常好，手术效果很自然，恢复也很快。整个过程都很专业，护士姐姐也很温柔。强烈推荐！',
-            images: ['img1.jpg', 'img2.jpg'],
-            status: 'approved',
-            createTime: new Date('2025-01-26'),
-            reply: '感谢您的认可！祝您越来越美丽！'
-          },
-          {
-            id: 'REV002',
-            customerName: '李女士',
-            clinicName: 'Gangnam Medical Center',
-            serviceName: '玻尿酸注射',
-            rating: 4,
-            content: '效果不错，就是价格有点贵。医生很细心，会详细讲解注意事项。',
-            images: [],
-            status: 'approved',
-            createTime: new Date('2025-01-25'),
-            reply: null
-          },
-          {
-            id: 'REV003',
-            customerName: '王先生',
-            clinicName: 'Test Beauty Clinic',
-            serviceName: '激光祛斑',
-            rating: 3,
-            content: '效果一般，可能需要多做几次才能看到明显效果。服务态度还可以。',
-            images: ['img3.jpg'],
-            status: 'pending',
-            createTime: new Date('2025-01-28'),
-            reply: null
-          },
-          {
-            id: 'REV004',
-            customerName: '赵小姐',
-            clinicName: 'Seoul Beauty Clinic',
-            serviceName: '水光针',
-            rating: 5,
-            content: '超级满意！皮肤变得水嫩有光泽，朋友都说我变年轻了。环境也很好，很干净。',
-            images: ['img4.jpg', 'img5.jpg', 'img6.jpg'],
-            status: 'approved',
-            createTime: new Date('2025-01-24'),
-            reply: '谢谢您的好评！期待您的下次光临！'
-          },
-          {
-            id: 'REV005',
-            customerName: '刘小姐',
-            clinicName: 'Gangnam Medical Center',
-            serviceName: '皮肤管理',
-            rating: 2,
-            content: '预约等待时间太长，体验不太好。',
-            images: [],
-            status: 'hidden',
-            createTime: new Date('2025-01-23'),
-            reply: null
-          },
-          {
-            id: 'REV006',
-            customerName: '陈女士',
-            clinicName: 'Seoul Beauty Clinic',
-            serviceName: '瘦脸针',
-            rating: 1,
-            content: '效果不明显，感觉被骗了。',
-            images: [],
-            status: 'rejected',
-            createTime: new Date('2025-01-22'),
-            reply: null
+        const response = await fetch(`${this.apiBase}/api/reviews/all?limit=100`, {
+          headers: {
+            'Authorization': `Bearer ${this.token}`
           }
-        ];
-        console.log('评价数据加载成功，共', this.reviews.length, '条');
+        });
+        const result = await response.json();
+
+        if (result.success && result.data && result.data.reviews) {
+          // 映射API返回的数据格式
+          this.reviews = result.data.reviews.map(review => ({
+            id: review.id || review._id,
+            customerName: review.userName || '匿名用户',
+            clinicName: review.clinicName || '未知机构',
+            serviceName: review.serviceType || '服务体验',
+            rating: review.rating || 5,
+            content: review.content || '',
+            images: review.images || [],
+            status: review.status || 'pending',
+            createTime: new Date(review.date || review.createdAt || Date.now()),
+            reply: review.reply || null
+          }));
+          console.log('评价数据加载成功，共', this.reviews.length, '条');
+        } else {
+          console.log('暂无评价数据');
+          this.reviews = [];
+        }
       } catch (error) {
         console.error('加载评价失败:', error);
+        this.reviews = [];
       }
     },
 
