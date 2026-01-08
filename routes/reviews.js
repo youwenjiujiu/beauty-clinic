@@ -80,6 +80,117 @@ router.post('/', optionalAuth, async (req, res) => {
 });
 
 /**
+ * 获取诊所的评价列表
+ * GET /api/reviews/clinic/:clinicId
+ */
+router.get('/clinic/:clinicId', async (req, res) => {
+  try {
+    const { clinicId } = req.params;
+    const { page = 1, limit = 20, status = 'approved' } = req.query;
+
+    const skip = (page - 1) * limit;
+
+    // 查询条件：按clinicId或clinicName匹配
+    const query = {
+      $or: [
+        { clinicId: clinicId },
+        { clinicName: { $regex: clinicId, $options: 'i' } }
+      ],
+      status: status
+    };
+
+    const reviews = await Review
+      .find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    const total = await Review.countDocuments(query);
+
+    // 格式化返回数据
+    const formattedReviews = reviews.map(review => ({
+      id: review._id,
+      userName: review.userName || '匿名用户',
+      userAvatar: review.userAvatar || '/images/default-avatar.png',
+      rating: review.rating?.overall || 5,
+      content: review.content,
+      images: review.images || [],
+      date: review.createdAt ? new Date(review.createdAt).toLocaleDateString('zh-CN') : '',
+      likes: review.helpfulCount || 0,
+      comments: 0,
+      isVerified: review.isVerified || false
+    }));
+
+    res.json({
+      success: true,
+      data: {
+        reviews: formattedReviews,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total,
+          pages: Math.ceil(total / limit)
+        }
+      }
+    });
+  } catch (error) {
+    console.error('获取诊所评价失败:', error);
+    res.status(500).json({
+      success: false,
+      message: '获取评价列表失败'
+    });
+  }
+});
+
+/**
+ * 获取所有评价（包括待审核的，用于前端显示）
+ * GET /api/reviews/all
+ */
+router.get('/all', async (req, res) => {
+  try {
+    const { page = 1, limit = 50 } = req.query;
+    const skip = (page - 1) * limit;
+
+    // 获取已审核通过的评价
+    const reviews = await Review
+      .find({ status: { $in: ['approved', 'pending'] } })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    const total = await Review.countDocuments({ status: { $in: ['approved', 'pending'] } });
+
+    const formattedReviews = reviews.map(review => ({
+      id: review._id,
+      clinicId: review.clinicId,
+      clinicName: review.clinicName || '',
+      userName: review.userName || '匿名用户',
+      userAvatar: review.userAvatar || '/images/default-avatar.png',
+      rating: review.rating?.overall || 5,
+      content: review.content,
+      images: review.images || [],
+      date: review.createdAt ? new Date(review.createdAt).toLocaleDateString('zh-CN') : '',
+      likes: review.helpfulCount || 0,
+      status: review.status
+    }));
+
+    res.json({
+      success: true,
+      data: {
+        reviews: formattedReviews,
+        total
+      }
+    });
+  } catch (error) {
+    console.error('获取评价列表失败:', error);
+    res.status(500).json({
+      success: false,
+      message: '获取评价列表失败'
+    });
+  }
+});
+
+/**
  * 创建评价（需要预约验证的版本）
  * POST /api/reviews/verified
  */
