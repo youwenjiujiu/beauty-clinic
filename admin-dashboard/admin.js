@@ -66,10 +66,12 @@ const app = createApp({
         priceImage: '',
         certificationImages: [],
         beforeAfterImages: [],
-        qrCodeImage: ''
+        qrCodeImage: '',
+        images: []  // 展示图片/封面图片
       },
       uploadingLogo: false,  // Logo上传中状态
       uploadingPriceImage: false,  // 价格图片上传中状态
+      uploadingGalleryImage: false,  // 展示图片上传中状态
       uploadingCertImage: false,  // 资质图片上传中状态
       uploadingBeforeAfterImage: false,  // 前后对比图上传中状态
       uploadingQrCode: false,  // 二维码上传中状态
@@ -681,6 +683,58 @@ const app = createApp({
       } finally {
         this.uploadingPriceImage = false;
         event.target.value = '';
+      }
+    },
+
+    // 上传展示图片（封面图片/Gallery）
+    async uploadGalleryImage(event) {
+      const files = event.target.files;
+      if (!files || files.length === 0) return;
+
+      this.uploadingGalleryImage = true;
+
+      try {
+        if (!this.editingClinic.images) {
+          this.editingClinic.images = [];
+        }
+
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+
+          if (!file.type.startsWith('image/')) {
+            continue;
+          }
+
+          if (file.size > 10 * 1024 * 1024) {
+            alert(`图片 ${file.name} 超过10MB，已跳过`);
+            continue;
+          }
+
+          const base64 = await this.fileToBase64(file);
+          const result = await this.apiRequest('POST', '/upload/image', {
+            image: base64,
+            folder: 'clinic-gallery',
+            filename: `gallery-${Date.now()}-${i}.${file.name.split('.').pop()}`
+          });
+
+          if (result.success) {
+            this.editingClinic.images.push(result.data.url);
+            console.log('展示图片上传成功:', result.data.url);
+          }
+        }
+      } catch (error) {
+        console.error('上传展示图片失败:', error);
+        alert('上传失败，请重试');
+      } finally {
+        this.uploadingGalleryImage = false;
+        event.target.value = '';
+      }
+    },
+
+    // 删除展示图片
+    removeGalleryImage(index) {
+      if (this.editingClinic.images) {
+        this.editingClinic.images.splice(index, 1);
       }
     },
 

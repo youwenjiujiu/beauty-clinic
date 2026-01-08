@@ -817,6 +817,24 @@
               <h4 class="text-lg font-semibold mb-3 mt-4 text-blue-600">图片资料</h4>
             </div>
 
+            <!-- 展示图片/封面图片 -->
+            <div class="col-span-2">
+              <label class="block text-sm font-medium mb-1">展示图片（封面图片）</label>
+              <p class="text-xs text-gray-500 mb-2">上传诊所封面图片，将在小程序诊所详情页顶部轮播展示</p>
+              <div v-if="editingClinic.images && editingClinic.images.length > 0" class="flex flex-wrap gap-2 mb-2">
+                <div v-for="(img, index) in editingClinic.images" :key="index" class="relative">
+                  <img :src="img" class="w-32 h-24 object-cover rounded border" />
+                  <span @click="removeGalleryImage(index)" class="absolute -top-2 -right-2 bg-red-500 text-white w-5 h-5 rounded-full flex items-center justify-center cursor-pointer text-xs">×</span>
+                </div>
+              </div>
+              <label class="cursor-pointer bg-pink-500 text-white px-4 py-2 rounded hover:bg-pink-600 inline-flex items-center">
+                <input type="file" class="hidden" accept="image/*" @change="uploadGalleryImage" multiple>
+                <span v-if="!uploadingGalleryImage">添加展示图片</span>
+                <span v-else>上传中...</span>
+              </label>
+              <p class="text-xs text-gray-500 mt-1">支持上传多张图片，建议尺寸 750x500</p>
+            </div>
+
             <!-- 价格图片 -->
             <div class="col-span-2">
               <label class="block text-sm font-medium mb-1">项目价格图片</label>
