@@ -870,22 +870,6 @@
               <p class="text-xs text-gray-500 mt-1">支持上传多张图片</p>
             </div>
 
-            <!-- 联系二维码 -->
-            <div class="col-span-2">
-              <label class="block text-sm font-medium mb-1">联系二维码</label>
-              <p class="text-xs text-gray-500 mb-2">上传微信二维码图片，用户可扫码添加联系（替代微信号显示）</p>
-              <div v-if="editingClinic.qrCodeImage" class="mb-2 relative inline-block">
-                <img :src="editingClinic.qrCodeImage" class="w-32 h-32 object-cover rounded border" />
-                <span @click="removeQrCode" class="absolute -top-2 -right-2 bg-red-500 text-white w-5 h-5 rounded-full flex items-center justify-center cursor-pointer text-xs">×</span>
-              </div>
-              <div v-else>
-                <label class="cursor-pointer bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600 inline-flex items-center">
-                  <input type="file" class="hidden" accept="image/*" @change="uploadQrCode">
-                  <span v-if="!uploadingQrCode">上传二维码</span>
-                  <span v-else>上传中...</span>
-                </label>
-              </div>
-            </div>
 
             <!-- 特色和状态 -->
             <div class="col-span-2">
