@@ -719,12 +719,29 @@
               <label class="block text-sm font-medium mb-1">地区/区域*</label>
               <select v-model="editingClinic.district" class="w-full border rounded px-3 py-2">
                 <option value="">请选择</option>
-                <option value="江南区">江南区</option>
-                <option value="瑞草区">瑞草区</option>
-                <option value="新沙洞">新沙洞</option>
-                <option value="狎鸥亭">狎鸥亭</option>
-                <option value="清潭洞">清潭洞</option>
-                <option value="明洞">明洞</option>
+                <optgroup label="首尔">
+                  <option value="江南区">江南区</option>
+                  <option value="瑞草区">瑞草区</option>
+                  <option value="新沙洞">新沙洞</option>
+                  <option value="狎鸥亭">狎鸥亭</option>
+                  <option value="清潭洞">清潭洞</option>
+                  <option value="明洞">明洞</option>
+                  <option value="麻浦区">麻浦区</option>
+                  <option value="弘大">弘大</option>
+                  <option value="龙山区">龙山区</option>
+                  <option value="梨泰院">梨泰院</option>
+                  <option value="永登浦">永登浦</option>
+                  <option value="汝矣岛">汝矣岛</option>
+                  <option value="东大门">东大门</option>
+                  <option value="钟路区">钟路区</option>
+                  <option value="松坡区">松坡区</option>
+                </optgroup>
+                <optgroup label="其他城市">
+                  <option value="仁川">仁川</option>
+                  <option value="济州">济州</option>
+                  <option value="釜山">釜山</option>
+                  <option value="大邱">大邱</option>
+                </optgroup>
               </select>
             </div>
 
