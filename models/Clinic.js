@@ -9,6 +9,8 @@ const clinicSchema = new mongoose.Schema({
   },
   nameEn: String,
   nameKr: String,
+  nameCn: String,  // 中文名称（小程序使用）
+  branch: String,  // 分店名称
 
   // 位置信息
   address: {
@@ -16,6 +18,10 @@ const clinicSchema = new mongoose.Schema({
     default: ''
   },
   addressKr: String, // 韩文地址
+  subwayInfo: String, // 交通信息
+  mapUrl: String, // 地图链接
+  latitude: Number, // 纬度
+  longitude: Number, // 经度
   city: {
     type: String,
     default: '首尔'
@@ -118,6 +124,11 @@ const clinicSchema = new mongoose.Schema({
     type: String,
     default: ''  // 简单字符串格式，如 "周一至周五 09:00-18:00"
   },
+  lunchBreak: String, // 午休时间
+  appointmentNote: String, // 预约说明
+  deposit: String, // 定金比例
+  consultFee: String, // 咨询费
+  specialOffers: String, // 特殊优惠
   holidays: [Date], // 休息日
 
   // 图片
@@ -142,6 +153,14 @@ const clinicSchema = new mongoose.Schema({
     year: Number
   }],
   tags: [String], // ['JCI认证', '明星医院', '医保定点' 等]
+  hasChineseService: {
+    type: Boolean,
+    default: false
+  },
+  isFree: {
+    type: Boolean,
+    default: false
+  },
 
   // 评分和统计
   rating: {
