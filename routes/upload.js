@@ -1,11 +1,70 @@
 const router = require('express').Router();
 const { put, del } = require('@vercel/blob');
+const sharp = require('sharp');
+
+// 图片压缩配置
+const COMPRESSION_CONFIG = {
+  maxWidth: 800,      // 最大宽度
+  maxHeight: 800,     // 最大高度
+  quality: 80,        // JPEG质量 (1-100)
+  maxSizeKB: 200      // 目标最大文件大小 (KB)
+};
+
+/**
+ * 压缩图片
+ * @param {Buffer} imageBuffer - 原始图片数据
+ * @param {string} contentType - 图片类型
+ * @returns {Promise<{buffer: Buffer, contentType: string}>}
+ */
+async function compressImage(imageBuffer, contentType) {
+  const originalSizeKB = imageBuffer.length / 1024;
+  console.log(`原始图片大小: ${originalSizeKB.toFixed(2)}KB`);
+
+  // 如果图片已经很小，不需要压缩
+  if (originalSizeKB <= COMPRESSION_CONFIG.maxSizeKB) {
+    console.log('图片大小合适，无需压缩');
+    return { buffer: imageBuffer, contentType };
+  }
+
+  try {
+    // 获取图片信息
+    const metadata = await sharp(imageBuffer).metadata();
+    console.log(`原始尺寸: ${metadata.width}x${metadata.height}`);
+
+    // 计算缩放比例
+    let width = metadata.width;
+    let height = metadata.height;
+
+    if (width > COMPRESSION_CONFIG.maxWidth || height > COMPRESSION_CONFIG.maxHeight) {
+      const ratio = Math.min(
+        COMPRESSION_CONFIG.maxWidth / width,
+        COMPRESSION_CONFIG.maxHeight / height
+      );
+      width = Math.round(width * ratio);
+      height = Math.round(height * ratio);
+    }
+
+    // 压缩图片
+    let compressedBuffer = await sharp(imageBuffer)
+      .resize(width, height, { fit: 'inside', withoutEnlargement: true })
+      .jpeg({ quality: COMPRESSION_CONFIG.quality, progressive: true })
+      .toBuffer();
+
+    const compressedSizeKB = compressedBuffer.length / 1024;
+    console.log(`压缩后大小: ${compressedSizeKB.toFixed(2)}KB (节省 ${((1 - compressedSizeKB/originalSizeKB) * 100).toFixed(1)}%)`);
+
+    return { buffer: compressedBuffer, contentType: 'image/jpeg' };
+  } catch (error) {
+    console.error('图片压缩失败，使用原图:', error.message);
+    return { buffer: imageBuffer, contentType };
+  }
+}
 
 /**
  * 图片上传API
  * POST /api/upload/image
  *
- * 接收 base64 格式的图片数据，上传到 Vercel Blob 存储
+ * 接收 base64 格式的图片数据，自动压缩后上传到 Vercel Blob 存储
  */
 router.post('/image', async (req, res) => {
   try {
@@ -46,9 +105,16 @@ router.post('/image', async (req, res) => {
       imageBuffer = Buffer.from(image, 'base64');
     }
 
-    // 生成文件名
-    const ext = contentType.split('/')[1] || 'jpg';
-    const finalFilename = filename || `${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
+    // 自动压缩图片
+    const compressed = await compressImage(imageBuffer, contentType);
+    imageBuffer = compressed.buffer;
+    contentType = compressed.contentType;
+
+    // 生成文件名 (压缩后统一用 jpg)
+    const ext = contentType === 'image/jpeg' ? 'jpg' : (contentType.split('/')[1] || 'jpg');
+    const finalFilename = filename
+      ? filename.replace(/\.[^.]+$/, `.${ext}`)
+      : `${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
     const blobPath = `${folder}/${finalFilename}`;
 
     // 上传到 Vercel Blob
