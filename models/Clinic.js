@@ -115,13 +115,8 @@ const clinicSchema = new mongoose.Schema({
 
   // 营业信息
   businessHours: {
-    monday: { open: String, close: String },
-    tuesday: { open: String, close: String },
-    wednesday: { open: String, close: String },
-    thursday: { open: String, close: String },
-    friday: { open: String, close: String },
-    saturday: { open: String, close: String },
-    sunday: { open: String, close: String }
+    type: String,
+    default: ''  // 简单字符串格式，如 "周一至周五 09:00-18:00"
   },
   holidays: [Date], // 休息日
 
@@ -268,19 +263,11 @@ clinicSchema.virtual('reviews', {
   foreignField: 'clinicId'
 });
 
-// 实例方法
+// 实例方法 - 简化版，始终返回true（营业时间改为简单字符串格式）
 clinicSchema.methods.isOpen = function() {
-  const now = new Date();
-  const day = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][now.getDay()];
-  const hours = this.businessHours[day];
-
-  if (!hours || !hours.open || !hours.close) return false;
-
-  const currentTime = now.getHours() * 100 + now.getMinutes();
-  const openTime = parseInt(hours.open.replace(':', ''));
-  const closeTime = parseInt(hours.close.replace(':', ''));
-
-  return currentTime >= openTime && currentTime <= closeTime;
+  // businessHours 现在是简单字符串格式，如 "周一至周五 09:00-18:00"
+  // 暂不做复杂的时间解析，默认返回true
+  return !!this.businessHours;
 };
 
 // 静态方法
