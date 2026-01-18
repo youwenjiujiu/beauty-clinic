@@ -173,73 +173,37 @@ const productionSpecialtiesData = [
 // 兼容旧代码的变量（默认使用审核模式数据）
 let specialtiesData = reviewSpecialtiesData;
 
-// 韩国区域数据 - 简化版本，只保留6个主要区作为示例
+// 韩国区域数据 - 与后台管理配置保持一致
 const districtsData = [
   {
-    value: 'gangnam-gu',
-    label: '江南区',
-    labelKr: '강남구',
+    value: 'seoul',
+    label: '首尔',
+    labelKr: '서울',
     children: [
-      { value: 'gangnam', label: '江南站', labelKr: '강남역' },
+      { value: 'gangnam-gu', label: '江南区', labelKr: '강남구' },
+      { value: 'seocho-gu', label: '瑞草区', labelKr: '서초구' },
       { value: 'sinsa', label: '新沙洞', labelKr: '신사동' },
       { value: 'apgujeong', label: '狎鸥亭', labelKr: '압구정' },
       { value: 'cheongdam', label: '清潭洞', labelKr: '청담동' },
-      { value: 'yeoksam', label: '驿三洞', labelKr: '역삼동' },
-      { value: 'daechi', label: '大峙洞', labelKr: '대치동' }
-    ]
-  },
-  {
-    value: 'seocho-gu',
-    label: '瑞草区',
-    labelKr: '서초구',
-    children: [
-      { value: 'seocho', label: '瑞草洞', labelKr: '서초동' },
-      { value: 'bangbae', label: '方背洞', labelKr: '방배동' },
-      { value: 'yangjae', label: '良才洞', labelKr: '양재동' },
-      { value: 'banpo', label: '盘浦洞', labelKr: '반포동' }
-    ]
-  },
-  {
-    value: 'mapo-gu',
-    label: '麻浦区',
-    labelKr: '마포구',
-    children: [
-      { value: 'hongdae', label: '弘大', labelKr: '홍대' },
-      { value: 'sinchon', label: '新村', labelKr: '신촌' },
-      { value: 'hapjeong', label: '合井', labelKr: '합정' },
-      { value: 'sangsu', label: '上水', labelKr: '상수' }
-    ]
-  },
-  {
-    value: 'jung-gu',
-    label: '中区',
-    labelKr: '중구',
-    children: [
       { value: 'myeongdong', label: '明洞', labelKr: '명동' },
-      { value: 'euljiro', label: '乙支路', labelKr: '을지로' },
-      { value: 'chungmuro', label: '忠武路', labelKr: '충무로' },
-      { value: 'namdaemun', label: '南大门', labelKr: '남대문' }
-    ]
-  },
-  {
-    value: 'yongsan-gu',
-    label: '龙山区',
-    labelKr: '용산구',
-    children: [
+      { value: 'mapo-gu', label: '麻浦区', labelKr: '마포구' },
+      { value: 'hongdae', label: '弘大', labelKr: '홍대' },
+      { value: 'yongsan-gu', label: '龙山区', labelKr: '용산구' },
       { value: 'itaewon', label: '梨泰院', labelKr: '이태원' },
-      { value: 'hannam', label: '汉南洞', labelKr: '한남동' },
-      { value: 'huam', label: '厚岩洞', labelKr: '후암동' }
+      { value: 'yeongdeungpo', label: '永登浦', labelKr: '영등포' },
+      { value: 'yeouido', label: '汝矣岛', labelKr: '여의도' },
+      { value: 'dongdaemun', label: '东大门', labelKr: '동대문' },
+      { value: 'jongno-gu', label: '钟路区', labelKr: '종로구' },
+      { value: 'songpa-gu', label: '松坡区', labelKr: '송파구' }
     ]
   },
   {
-    value: 'songpa-gu',
-    label: '松坡区',
-    labelKr: '송파구',
+    value: 'other-cities',
+    label: '其他城市',
+    labelKr: '기타 도시',
     children: [
-      { value: 'jamsil', label: '蚕室', labelKr: '잠실' },
-      { value: 'songpa', label: '松坡洞', labelKr: '송파동' },
-      { value: 'garak', label: '可乐洞', labelKr: '가락동' },
-      { value: 'munjeong', label: '文井洞', labelKr: '문정동' }
+      { value: 'incheon', label: '仁川', labelKr: '인천' },
+      { value: 'jeju', label: '济州', labelKr: '제주' }
     ]
   }
 ];
