@@ -200,8 +200,13 @@
 
         <!-- 专长领域 -->
         <div class="mt-4">
-          <label class="block text-sm font-medium mb-1">专长领域（逗号分隔）</label>
-          <input v-model="specialtiesStr" class="w-full border rounded px-3 py-2" placeholder="医美咨询,整形咨询">
+          <label class="block text-sm font-medium mb-1">专长领域（可多选）</label>
+          <div class="flex flex-wrap gap-2 p-3 border rounded bg-gray-50">
+            <label v-for="specialty in specialtyOptions" :key="specialty" class="inline-flex items-center">
+              <input type="checkbox" :value="specialty" v-model="formData.specialties" class="mr-1">
+              <span class="text-sm mr-3">{{ specialty }}</span>
+            </label>
+          </div>
         </div>
 
         <!-- 服务区域 -->
@@ -248,6 +253,11 @@
           consultants: [],
           showDialog: false,
           isEdit: false,
+          specialtyOptions: [
+            '皮肤管理', '皮肤治疗', '激光提升', '线雕', '填充', '肉毒', '身体填充',
+            '眼部整形', '鼻部整形', '轮廓', '双鄂', '胸部整形',
+            '女性私密', '男性整形', '牙科/眼科', '毛发管理/移植', '脂肪移植/吸'
+          ],
           formData: {
             name: '',
             nameKr: '',
@@ -273,7 +283,6 @@
             tags: []
           },
           languagesStr: '',
-          specialtiesStr: '',
           serviceAreasStr: '',
           tagsStr: '',
           editingId: null
@@ -303,8 +312,8 @@
           this.isEdit = true;
           this.editingId = consultant._id;
           this.formData = { ...consultant };
+          this.formData.specialties = consultant.specialties || [];
           this.languagesStr = (consultant.languages || []).join(',');
-          this.specialtiesStr = (consultant.specialties || []).join(',');
           this.serviceAreasStr = (consultant.serviceAreas || []).join(',');
           this.tagsStr = (consultant.tags || []).join(',');
           this.showDialog = true;
@@ -339,7 +348,6 @@
             tags: []
           };
           this.languagesStr = '';
-          this.specialtiesStr = '';
           this.serviceAreasStr = '';
           this.tagsStr = '';
           this.editingId = null;
@@ -353,7 +361,7 @@
 
           // 处理数组字段
           this.formData.languages = this.languagesStr.split(',').map(s => s.trim()).filter(s => s);
-          this.formData.specialties = this.specialtiesStr.split(',').map(s => s.trim()).filter(s => s);
+          // specialties 已经是数组，不需要转换
           this.formData.serviceAreas = this.serviceAreasStr.split(',').map(s => s.trim()).filter(s => s);
           this.formData.tags = this.tagsStr.split(',').map(s => s.trim()).filter(s => s);
 

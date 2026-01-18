@@ -274,8 +274,10 @@
         <el-form-item label="经验">
           <el-input v-model="currentAdvisor.experience" placeholder="例如：3年"></el-input>
         </el-form-item>
-        <el-form-item label="专长">
-          <el-input v-model="currentAdvisor.specialty" placeholder="例如：整形外科陪同"></el-input>
+        <el-form-item label="专长领域">
+          <el-select v-model="currentAdvisor.specialties" multiple placeholder="请选择专长领域" style="width: 100%">
+            <el-option v-for="item in specialtyOptions" :key="item" :label="item" :value="item"></el-option>
+          </el-select>
         </el-form-item>
         <el-form-item label="标签">
           <el-select v-model="currentAdvisor.tags" multiple placeholder="请选择标签">
@@ -312,11 +314,16 @@
         advisors: [],
         dialogVisible: false,
         editMode: 'add',
+        specialtyOptions: [
+          '皮肤管理', '皮肤治疗', '激光提升', '线雕', '填充', '肉毒', '身体填充',
+          '眼部整形', '鼻部整形', '轮廓', '双鄂', '胸部整形',
+          '女性私密', '男性整形', '牙科/眼科', '毛发管理/移植', '脂肪移植/吸'
+        ],
         currentAdvisor: {
           name: '',
           title: '医疗顾问',
           experience: '',
-          specialty: '',
+          specialties: [],
           tags: [],
           type: 'senior',
           internalNote: ''
@@ -367,7 +374,7 @@
             name: '',
             title: '医疗顾问',
             experience: '',
-            specialty: '',
+            specialties: [],
             tags: [],
             type: 'senior',
             internalNote: ''
