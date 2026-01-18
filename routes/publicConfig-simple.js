@@ -139,8 +139,8 @@ router.get('/texts', async (req, res) => {
   }
 });
 
-// 专科分类数据（可动态修改）
-let specialtiesData = [
+// 专科分类数据 - 审核模式（通用安全内容）
+const reviewSpecialtiesData = [
   { id: 'skin', name: '皮肤管理', icon: '🧴', order: 1 },
   { id: 'plastic', name: '整形手术', icon: '💉', order: 2 },
   { id: 'injection', name: '微整形', icon: '💊', order: 3 },
@@ -148,6 +148,30 @@ let specialtiesData = [
   { id: 'body', name: '身体塑形', icon: '💪', order: 5 },
   { id: 'antiaging', name: '抗衰老', icon: '🌟', order: 6 }
 ];
+
+// 专科分类数据 - 生产模式（后台管理配置的完整专长列表）
+const productionSpecialtiesData = [
+  { id: 'skin-care', name: '皮肤管理', icon: '🧴', order: 1 },
+  { id: 'skin-treatment', name: '皮肤治疗', icon: '💆', order: 2 },
+  { id: 'laser', name: '激光提升', icon: '✨', order: 3 },
+  { id: 'thread', name: '线雕', icon: '🧵', order: 4 },
+  { id: 'filler', name: '填充', icon: '💉', order: 5 },
+  { id: 'botox', name: '肉毒', icon: '💊', order: 6 },
+  { id: 'body-filler', name: '身体填充', icon: '💪', order: 7 },
+  { id: 'eye', name: '眼部整形', icon: '👁️', order: 8 },
+  { id: 'nose', name: '鼻部整形', icon: '👃', order: 9 },
+  { id: 'contour', name: '轮廓', icon: '🎭', order: 10 },
+  { id: 'jaw', name: '双鄂', icon: '🦷', order: 11 },
+  { id: 'breast', name: '胸部整形', icon: '🌸', order: 12 },
+  { id: 'female', name: '女性私密', icon: '🌺', order: 13 },
+  { id: 'male', name: '男性整形', icon: '👨', order: 14 },
+  { id: 'dental-eye', name: '牙科/眼科', icon: '🦷', order: 15 },
+  { id: 'hair', name: '毛发管理/移植', icon: '💇', order: 16 },
+  { id: 'fat', name: '脂肪移植/吸', icon: '✂️', order: 17 }
+];
+
+// 兼容旧代码的变量（默认使用审核模式数据）
+let specialtiesData = reviewSpecialtiesData;
 
 // 韩国区域数据 - 简化版本，只保留6个主要区作为示例
 const districtsData = [
@@ -235,10 +259,12 @@ router.get('/filter-options', async (req, res) => {
     let districts = [];
     let priceRanges = [];
     let city = '';
+    let currentSpecialties = [];
 
     if (mode === 'review') {
-      // 审核模式：通用区域
+      // 审核模式：通用安全内容
       city = '本地';
+      currentSpecialties = reviewSpecialtiesData;
       districts = [
         {
           value: 'area1',
@@ -265,8 +291,9 @@ router.get('/filter-options', async (req, res) => {
         { value: '500+', label: '500元以上' }
       ];
     } else {
-      // 生产模式：韩国区域
+      // 生产模式：使用后台配置的完整专长列表
       city = '首尔';
+      currentSpecialties = productionSpecialtiesData;
       districts = districtsData;
       priceRanges = [
         { value: '0-100', label: '100万韩元以下' },
@@ -281,8 +308,8 @@ router.get('/filter-options', async (req, res) => {
       data: {
         city: city,
         districts: districts,
-        services: specialtiesData.map(s => ({ value: s.id, label: s.name })),
-        specialties: specialtiesData,
+        services: currentSpecialties.map(s => ({ value: s.id, label: s.name })),
+        specialties: currentSpecialties,
         priceRanges: priceRanges
       }
     });
