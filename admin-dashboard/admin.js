@@ -90,7 +90,7 @@ const app = createApp({
 
       // 服务项目管理
       services: [],
-      serviceCategories: ['全部', '整形手术', '皮肤管理', '微整形', '激光治疗', '其他'],
+      serviceCategories: ['全部', '整形手术', '皮肤管理', '微整形', '激光提升', '其他'],
       selectedCategory: '全部',
       showServiceModal: false,
       editingService: null,
@@ -367,7 +367,7 @@ const app = createApp({
                 { value: 'skin', label: '皮肤管理' },
                 { value: 'plastic', label: '整形手术' },
                 { value: 'injection', label: '微整形' },
-                { value: 'laser', label: '激光治疗' }
+                { value: 'laser', label: '激光提升' }
               ],
               priceRanges: [
                 { value: '0-100', label: '100万韩元以下' },

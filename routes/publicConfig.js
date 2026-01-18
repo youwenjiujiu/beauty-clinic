@@ -26,7 +26,7 @@ const getConfigStore = () => {
         { value: 'skin', label: '皮肤管理' },
         { value: 'plastic', label: '整形手术' },
         { value: 'injection', label: '微整形' },
-        { value: 'laser', label: '激光治疗' }
+        { value: 'laser', label: '激光提升' }
       ],
       priceRanges: [
         { value: '0-100', label: '100万韩元以下' },

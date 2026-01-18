@@ -102,7 +102,7 @@ router.get('/texts', async (req, res) => {
       skin: '皮肤管理',
       plastic: '整形手术',
       injection: '注射',
-      laser: '激光治疗',
+      laser: '激光提升',
       body: '身体塑形',
       antiaging: '抗衰老',
 
@@ -144,7 +144,7 @@ let specialtiesData = [
   { id: 'skin', name: '皮肤管理', icon: '🧴', order: 1 },
   { id: 'plastic', name: '整形手术', icon: '💉', order: 2 },
   { id: 'injection', name: '微整形', icon: '💊', order: 3 },
-  { id: 'laser', name: '激光治疗', icon: '✨', order: 4 },
+  { id: 'laser', name: '激光提升', icon: '✨', order: 4 },
   { id: 'body', name: '身体塑形', icon: '💪', order: 5 },
   { id: 'antiaging', name: '抗衰老', icon: '🌟', order: 6 }
 ];
@@ -465,7 +465,7 @@ let categoriesStore = [
   { id: 'skin', name: '皮肤管理', icon: '🧴', order: 1, type: 'both' },
   { id: 'plastic', name: '整形手术', icon: '💉', order: 2, type: 'both' },
   { id: 'injection', name: '填充', icon: '💊', order: 3, type: 'both' },
-  { id: 'laser', name: '激光治疗', icon: '✨', order: 4, type: 'both' },
+  { id: 'laser', name: '激光提升', icon: '✨', order: 4, type: 'both' },
   { id: 'body', name: '身体塑形', icon: '💪', order: 5, type: 'filter' },
   { id: 'antiaging', name: '抗衰老', icon: '🌟', order: 6, type: 'filter' }
 ];
@@ -561,7 +561,7 @@ router.get('/services', async (req, res) => {
         id: 3,
         name: '激光美白',
         nameKr: '레이저 미백',
-        category: '激光治疗',
+        category: '激光提升',
         description: '改善肤色均匀度，提亮肤色',
         priceRange: '80-200万韩元',
         duration: 45,
@@ -601,7 +601,7 @@ router.get('/services', async (req, res) => {
         id: 7,
         name: '祛斑治疗',
         nameKr: '기미 치료',
-        category: '激光治疗',
+        category: '激光提升',
         description: '淡化色斑，均匀肤色',
         priceRange: '100-250万韩元',
         duration: 60,
