@@ -12,13 +12,15 @@ const categories = [
 
   // 仅在筛选分类显示（filter）
   { id: 'body', name: '身体塑形', icon: '💪', order: 5, type: 'filter' },
-  { id: 'antiaging', name: '抗衰老', icon: '🌟', order: 6, type: 'filter' },
-  { id: 'hair', name: '毛发移植', icon: '👨‍🦱', order: 7, type: 'filter' },
-  { id: 'teeth', name: '牙齿美容', icon: '🦷', order: 8, type: 'filter' },
-  { id: 'eye', name: '眼部整形', icon: '👁️', order: 9, type: 'filter' },
-  { id: 'nose', name: '鼻部整形', icon: '👃', order: 10, type: 'filter' },
-  { id: 'face', name: '面部轮廓', icon: '😊', order: 11, type: 'filter' },
-  { id: 'breast', name: '胸部整形', icon: '👙', order: 12, type: 'filter' }
+  { id: 'slimming', name: '减肥/塑形', icon: '🏃', order: 6, type: 'filter' },
+  { id: 'antiaging', name: '抗衰老', icon: '🌟', order: 7, type: 'filter' },
+  { id: 'hair', name: '毛发移植', icon: '👨‍🦱', order: 8, type: 'filter' },
+  { id: 'teeth', name: '牙齿美容', icon: '🦷', order: 9, type: 'filter' },
+  { id: 'eye', name: '眼部整形', icon: '👁️', order: 10, type: 'filter' },
+  { id: 'nose', name: '鼻部整形', icon: '👃', order: 11, type: 'filter' },
+  { id: 'face', name: '面部轮廓', icon: '😊', order: 12, type: 'filter' },
+  { id: 'breast', name: '胸部整形', icon: '👙', order: 13, type: 'filter' },
+  { id: 'other', name: '其他', icon: '📋', order: 14, type: 'filter' }
 ];
 
 async function setupCategories() {

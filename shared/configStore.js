@@ -126,7 +126,9 @@ const configStore = {
       { value: 'skin', label: '皮肤管理' },
       { value: 'plastic', label: '整形手术' },
       { value: 'injection', label: '微整形' },
-      { value: 'laser', label: '激光提升' }
+      { value: 'laser', label: '激光提升' },
+      { value: 'slimming', label: '减肥/塑形' },
+      { value: 'other', label: '其他' }
     ],
     priceRanges: [
       { value: '0-100', label: '100万韩元以下' },
