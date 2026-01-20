@@ -168,10 +168,11 @@ async function startServer() {
     if (process.env.VERCEL) {
       console.log('🚀 Running on Vercel');
     } else {
-      app.listen(PORT, () => {
+      // 监听 0.0.0.0 以便容器环境可以访问
+      app.listen(PORT, '0.0.0.0', () => {
         console.log(`🚀 服务器运行在端口 ${PORT}`);
         console.log(`📝 环境: ${process.env.NODE_ENV}`);
-        console.log(`🔗 健康检查: http://localhost:${PORT}/health`);
+        console.log(`🔗 健康检查: http://0.0.0.0:${PORT}/health`);
       });
     }
   } catch (error) {
