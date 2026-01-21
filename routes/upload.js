@@ -1,6 +1,14 @@
 const router = require('express').Router();
 const COS = require('cos-nodejs-sdk-v5');
-const sharp = require('sharp');
+
+// 尝试加载 sharp（可能在某些环境不可用）
+let sharp = null;
+try {
+  sharp = require('sharp');
+  console.log('✅ sharp 模块加载成功');
+} catch (err) {
+  console.log('⚠️ sharp 模块加载失败，将跳过图片压缩:', err.message);
+}
 
 // 图片压缩配置
 const COMPRESSION_CONFIG = {
@@ -33,6 +41,12 @@ const COS_REGION = process.env.COS_REGION || 'ap-shanghai';
 async function compressImage(imageBuffer, contentType) {
   const originalSizeKB = imageBuffer.length / 1024;
   console.log(`原始图片大小: ${originalSizeKB.toFixed(2)}KB`);
+
+  // 如果 sharp 不可用，直接返回原图
+  if (!sharp) {
+    console.log('sharp 不可用，跳过压缩');
+    return { buffer: imageBuffer, contentType };
+  }
 
   if (originalSizeKB <= COMPRESSION_CONFIG.maxSizeKB) {
     console.log('图片大小合适，无需压缩');
@@ -230,6 +244,32 @@ router.delete('/image', async (req, res) => {
       message: '删除失败: ' + error.message
     });
   }
+});
+
+/**
+ * 调试接口 - 检查COS配置
+ * GET /api/upload/debug
+ */
+router.get('/debug', (req, res) => {
+  const secretId = process.env.COS_SECRET_ID || '';
+  const secretKey = process.env.COS_SECRET_KEY || '';
+  const bucket = process.env.COS_BUCKET || '';
+  const region = process.env.COS_REGION || 'ap-shanghai';
+
+  res.json({
+    success: true,
+    config: {
+      secretId_exists: !!secretId,
+      secretId_length: secretId.length,
+      secretId_preview: secretId ? `${secretId.substring(0, 6)}...${secretId.slice(-4)}` : null,
+      secretKey_exists: !!secretKey,
+      secretKey_length: secretKey.length,
+      bucket_exists: !!bucket,
+      bucket_value: bucket,
+      region_value: region,
+      sharp_available: !!sharp
+    }
+  });
 });
 
 module.exports = router;
