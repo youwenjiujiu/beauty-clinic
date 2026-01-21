@@ -1,14 +1,28 @@
 const router = require('express').Router();
-const { put, del } = require('@vercel/blob');
+const COS = require('cos-nodejs-sdk-v5');
 const sharp = require('sharp');
 
 // 图片压缩配置
 const COMPRESSION_CONFIG = {
-  maxWidth: 800,      // 最大宽度
-  maxHeight: 800,     // 最大高度
-  quality: 80,        // JPEG质量 (1-100)
-  maxSizeKB: 200      // 目标最大文件大小 (KB)
+  maxWidth: 800,
+  maxHeight: 800,
+  quality: 80,
+  maxSizeKB: 200
 };
+
+// 初始化 COS 客户端
+function getCosClient() {
+  if (!process.env.COS_SECRET_ID || !process.env.COS_SECRET_KEY) {
+    return null;
+  }
+  return new COS({
+    SecretId: process.env.COS_SECRET_ID,
+    SecretKey: process.env.COS_SECRET_KEY
+  });
+}
+
+const COS_BUCKET = process.env.COS_BUCKET;
+const COS_REGION = process.env.COS_REGION || 'ap-shanghai';
 
 /**
  * 压缩图片
@@ -20,18 +34,15 @@ async function compressImage(imageBuffer, contentType) {
   const originalSizeKB = imageBuffer.length / 1024;
   console.log(`原始图片大小: ${originalSizeKB.toFixed(2)}KB`);
 
-  // 如果图片已经很小，不需要压缩
   if (originalSizeKB <= COMPRESSION_CONFIG.maxSizeKB) {
     console.log('图片大小合适，无需压缩');
     return { buffer: imageBuffer, contentType };
   }
 
   try {
-    // 获取图片信息
     const metadata = await sharp(imageBuffer).metadata();
     console.log(`原始尺寸: ${metadata.width}x${metadata.height}`);
 
-    // 计算缩放比例
     let width = metadata.width;
     let height = metadata.height;
 
@@ -44,7 +55,6 @@ async function compressImage(imageBuffer, contentType) {
       height = Math.round(height * ratio);
     }
 
-    // 压缩图片
     let compressedBuffer = await sharp(imageBuffer)
       .resize(width, height, { fit: 'inside', withoutEnlargement: true })
       .jpeg({ quality: COMPRESSION_CONFIG.quality, progressive: true })
@@ -61,10 +71,49 @@ async function compressImage(imageBuffer, contentType) {
 }
 
 /**
+ * 上传到腾讯云 COS
+ */
+function uploadToCOS(cos, key, buffer, contentType) {
+  return new Promise((resolve, reject) => {
+    cos.putObject({
+      Bucket: COS_BUCKET,
+      Region: COS_REGION,
+      Key: key,
+      Body: buffer,
+      ContentType: contentType
+    }, (err, data) => {
+      if (err) {
+        reject(err);
+      } else {
+        // 返回公开访问 URL
+        const url = `https://${COS_BUCKET}.cos.${COS_REGION}.myqcloud.com/${key}`;
+        resolve({ url, ...data });
+      }
+    });
+  });
+}
+
+/**
+ * 从腾讯云 COS 删除
+ */
+function deleteFromCOS(cos, key) {
+  return new Promise((resolve, reject) => {
+    cos.deleteObject({
+      Bucket: COS_BUCKET,
+      Region: COS_REGION,
+      Key: key
+    }, (err, data) => {
+      if (err) reject(err);
+      else resolve(data);
+    });
+  });
+}
+
+/**
  * 图片上传API
  * POST /api/upload/image
  *
- * 接收 base64 格式的图片数据，自动压缩后上传到 Vercel Blob 存储
+ * 接收 base64 格式的图片数据，自动压缩后上传到腾讯云 COS 存储
  */
 router.post('/image', async (req, res) => {
   try {
@@ -77,11 +126,11 @@ router.post('/image', async (req, res) => {
       });
     }
 
-    // 检查是否配置了 Blob 存储
-    if (!process.env.BLOB_READ_WRITE_TOKEN) {
+    const cos = getCosClient();
+    if (!cos || !COS_BUCKET) {
       return res.status(500).json({
         success: false,
-        message: 'Blob存储未配置，请联系管理员'
+        message: 'COS存储未配置，请联系管理员'
       });
     }
 
@@ -90,7 +139,6 @@ router.post('/image', async (req, res) => {
     let contentType = 'image/jpeg';
 
     if (image.startsWith('data:')) {
-      // 格式: data:image/jpeg;base64,/9j/4AAQ...
       const matches = image.match(/^data:([^;]+);base64,(.+)$/);
       if (!matches) {
         return res.status(400).json({
@@ -101,7 +149,6 @@ router.post('/image', async (req, res) => {
       contentType = matches[1];
       imageBuffer = Buffer.from(matches[2], 'base64');
     } else {
-      // 纯 base64 字符串
       imageBuffer = Buffer.from(image, 'base64');
     }
 
@@ -110,27 +157,23 @@ router.post('/image', async (req, res) => {
     imageBuffer = compressed.buffer;
     contentType = compressed.contentType;
 
-    // 生成文件名 (压缩后统一用 jpg)
+    // 生成文件名
     const ext = contentType === 'image/jpeg' ? 'jpg' : (contentType.split('/')[1] || 'jpg');
     const finalFilename = filename
       ? filename.replace(/\.[^.]+$/, `.${ext}`)
       : `${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
-    const blobPath = `${folder}/${finalFilename}`;
+    const key = `${folder}/${finalFilename}`;
 
-    // 上传到 Vercel Blob
-    const blob = await put(blobPath, imageBuffer, {
-      access: 'public',
-      contentType: contentType,
-      addRandomSuffix: false
-    });
+    // 上传到腾讯云 COS
+    const result = await uploadToCOS(cos, key, imageBuffer, contentType);
 
-    console.log('图片上传成功:', blob.url);
+    console.log('图片上传成功:', result.url);
 
     res.json({
       success: true,
       message: '上传成功',
       data: {
-        url: blob.url,
+        url: result.url,
         filename: finalFilename,
         size: imageBuffer.length,
         contentType: contentType
@@ -161,15 +204,19 @@ router.delete('/image', async (req, res) => {
       });
     }
 
-    // 检查是否配置了 Blob 存储
-    if (!process.env.BLOB_READ_WRITE_TOKEN) {
+    const cos = getCosClient();
+    if (!cos || !COS_BUCKET) {
       return res.status(500).json({
         success: false,
-        message: 'Blob存储未配置'
+        message: 'COS存储未配置'
       });
     }
 
-    await del(url);
+    // 从 URL 提取 key
+    const urlObj = new URL(url);
+    const key = urlObj.pathname.substring(1); // 去掉开头的 /
+
+    await deleteFromCOS(cos, key);
 
     res.json({
       success: true,
