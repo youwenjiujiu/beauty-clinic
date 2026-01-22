@@ -112,6 +112,15 @@ app.get('/health', (req, res) => {
   });
 });
 
+// 部署测试 - 2025-01-22
+app.get('/deploy-test', (req, res) => {
+  res.json({
+    deployed: true,
+    version: '2025-01-22-v3',
+    APP_MODE: process.env.APP_MODE || '(未设置)'
+  });
+});
+
 // 环境变量检查（仅用于调试）
 app.get('/debug/env', (req, res) => {
   res.json({
