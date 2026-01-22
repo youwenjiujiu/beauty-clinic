@@ -1,6 +1,6 @@
 {
   "name": "dudu-appointment-backend",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "嘟嘟预约通后端服务",
   "main": "server.js",
   "scripts": {
