@@ -1,6 +1,9 @@
 const router = require('express').Router();
 const Config = require('../models/Config');
 
+// 代码版本号 - 用于确认部署是否生效
+const CODE_VERSION = '2025-01-22-v2';
+
 /**
  * 获取应用运行模式（公开接口）
  * GET /api/config/mode
@@ -27,6 +30,7 @@ router.get('/mode', async (req, res) => {
       success: true,
       mode: mode,
       envValue: envValue || '(未设置)',
+      codeVersion: CODE_VERSION,
       message: mode === 'review' ? '当前为审核模式' : '当前为生产模式',
       timestamp: Date.now()
     });
