@@ -11,9 +11,9 @@ const Config = require('../models/Config');
  */
 router.get('/mode', async (req, res) => {
   try {
-    // 从环境变量获取模式（Vercel环境变量）
-    // 审核通过后默认使用 production 模式
-    let mode = process.env.APP_MODE || 'production';
+    // 从环境变量获取模式
+    // 默认使用 review 模式（安全第一，审核通过后设置 APP_MODE=production）
+    let mode = process.env.APP_MODE || 'review';
 
     // 验证模式值
     if (!['review', 'production'].includes(mode)) {
@@ -50,7 +50,7 @@ router.get('/mode', async (req, res) => {
  */
 router.get('/texts', async (req, res) => {
   try {
-    const mode = process.env.APP_MODE || 'production';
+    const mode = process.env.APP_MODE || 'review';
 
     if (mode === 'review') {
       // 审核模式：返回空配置，使用前端默认文案
@@ -218,7 +218,7 @@ const districtsData = [
  */
 router.get('/filter-options', async (req, res) => {
   try {
-    const mode = process.env.APP_MODE || 'production';
+    const mode = process.env.APP_MODE || 'review';
 
     let districts = [];
     let priceRanges = [];
