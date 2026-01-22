@@ -13,18 +13,20 @@ router.get('/mode', async (req, res) => {
   try {
     // 从环境变量获取模式
     // 默认使用 review 模式（安全第一，审核通过后设置 APP_MODE=production）
-    let mode = process.env.APP_MODE || 'review';
+    const envValue = process.env.APP_MODE;
+    let mode = envValue || 'review';
 
     // 验证模式值
     if (!['review', 'production'].includes(mode)) {
       mode = 'review'; // 无效值时默认审核模式
     }
 
-    console.log(`[模式查询] 当前模式: ${mode}`);
+    console.log(`[模式查询] 环境变量APP_MODE: ${envValue}, 当前模式: ${mode}`);
 
     res.json({
       success: true,
       mode: mode,
+      envValue: envValue || '(未设置)',
       message: mode === 'review' ? '当前为审核模式' : '当前为生产模式',
       timestamp: Date.now()
     });
