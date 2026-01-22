@@ -67,8 +67,15 @@ app.use(morgan('combined'));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// 静态文件服务（管理后台）
-app.use('/admin', express.static('admin-dashboard'));
+// 静态文件服务（管理后台）- 审核模式下隐藏
+if (process.env.APP_MODE !== 'review') {
+  app.use('/admin', express.static('admin-dashboard'));
+} else {
+  // 审核模式下返回404
+  app.use('/admin', (req, res) => {
+    res.status(404).send('Not Found');
+  });
+}
 
 // 限流配置（Vercel 上禁用，因为 IP 不可靠）
 if (!process.env.VERCEL) {
