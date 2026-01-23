@@ -646,36 +646,45 @@ const app = createApp({
       });
     },
 
-    // 上传价格图片
+    // 上传价格图片（支持多张）
     async uploadPriceImage(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-
-      if (!file.type.startsWith('image/')) {
-        alert('请选择图片文件');
-        return;
-      }
-
-      if (file.size > 10 * 1024 * 1024) {
-        alert('图片大小不能超过10MB');
-        return;
-      }
+      const files = event.target.files;
+      if (!files || files.length === 0) return;
 
       this.uploadingPriceImage = true;
 
       try {
-        const base64 = await this.fileToBase64(file);
-        const result = await this.apiRequest('POST', '/upload/image', {
-          image: base64,
-          folder: 'clinic-prices',
-          filename: `price-${Date.now()}.${file.name.split('.').pop()}`
-        });
+        // 确保priceImages是数组
+        if (!this.editingClinic.priceImages) {
+          this.editingClinic.priceImages = [];
+        }
 
-        if (result.success) {
-          this.editingClinic.priceImage = result.data.url;
-          console.log('价格图片上传成功:', result.data.url);
-        } else {
-          alert('上传失败: ' + (result.message || '未知错误'));
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+
+          if (!file.type.startsWith('image/')) {
+            console.log('跳过非图片文件:', file.name);
+            continue;
+          }
+
+          if (file.size > 10 * 1024 * 1024) {
+            alert(`图片 ${file.name} 大小超过10MB，已跳过`);
+            continue;
+          }
+
+          const base64 = await this.fileToBase64(file);
+          const result = await this.apiRequest('POST', '/upload/image', {
+            image: base64,
+            folder: 'clinic-prices',
+            filename: `price-${Date.now()}-${i}.${file.name.split('.').pop()}`
+          });
+
+          if (result.success) {
+            this.editingClinic.priceImages.push(result.data.url);
+            console.log('价格图片上传成功:', result.data.url);
+          } else {
+            alert('上传失败: ' + (result.message || '未知错误'));
+          }
         }
       } catch (error) {
         console.error('上传价格图片失败:', error);
@@ -683,6 +692,13 @@ const app = createApp({
       } finally {
         this.uploadingPriceImage = false;
         event.target.value = '';
+      }
+    },
+
+    // 删除价格图片
+    removePriceImage(index) {
+      if (this.editingClinic.priceImages) {
+        this.editingClinic.priceImages.splice(index, 1);
       }
     },
 
