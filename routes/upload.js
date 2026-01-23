@@ -12,10 +12,18 @@ try {
 
 // 图片压缩配置
 const COMPRESSION_CONFIG = {
-  maxWidth: 800,
-  maxHeight: 800,
-  quality: 80,
-  maxSizeKB: 200
+  maxWidth: 1200,
+  maxHeight: 1200,
+  quality: 85,
+  maxSizeKB: 300
+};
+
+// 价格图片专用配置（需要更高分辨率保持文字清晰）
+const PRICE_IMAGE_CONFIG = {
+  maxWidth: 2000,
+  maxHeight: 4000,
+  quality: 90,
+  maxSizeKB: 800
 };
 
 // 初始化 COS 客户端
@@ -36,9 +44,10 @@ const COS_REGION = process.env.COS_REGION || 'ap-shanghai';
  * 压缩图片
  * @param {Buffer} imageBuffer - 原始图片数据
  * @param {string} contentType - 图片类型
+ * @param {string} folder - 上传目录（用于选择压缩配置）
  * @returns {Promise<{buffer: Buffer, contentType: string}>}
  */
-async function compressImage(imageBuffer, contentType) {
+async function compressImage(imageBuffer, contentType, folder = '') {
   const originalSizeKB = imageBuffer.length / 1024;
   console.log(`原始图片大小: ${originalSizeKB.toFixed(2)}KB`);
 
@@ -48,7 +57,11 @@ async function compressImage(imageBuffer, contentType) {
     return { buffer: imageBuffer, contentType };
   }
 
-  if (originalSizeKB <= COMPRESSION_CONFIG.maxSizeKB) {
+  // 根据文件夹选择压缩配置（价格图片使用高分辨率配置）
+  const config = folder === 'clinic-prices' ? PRICE_IMAGE_CONFIG : COMPRESSION_CONFIG;
+  console.log(`使用压缩配置: ${folder === 'clinic-prices' ? '价格图片(高清)' : '普通图片'}`);
+
+  if (originalSizeKB <= config.maxSizeKB) {
     console.log('图片大小合适，无需压缩');
     return { buffer: imageBuffer, contentType };
   }
@@ -60,10 +73,10 @@ async function compressImage(imageBuffer, contentType) {
     let width = metadata.width;
     let height = metadata.height;
 
-    if (width > COMPRESSION_CONFIG.maxWidth || height > COMPRESSION_CONFIG.maxHeight) {
+    if (width > config.maxWidth || height > config.maxHeight) {
       const ratio = Math.min(
-        COMPRESSION_CONFIG.maxWidth / width,
-        COMPRESSION_CONFIG.maxHeight / height
+        config.maxWidth / width,
+        config.maxHeight / height
       );
       width = Math.round(width * ratio);
       height = Math.round(height * ratio);
@@ -71,7 +84,7 @@ async function compressImage(imageBuffer, contentType) {
 
     let compressedBuffer = await sharp(imageBuffer)
       .resize(width, height, { fit: 'inside', withoutEnlargement: true })
-      .jpeg({ quality: COMPRESSION_CONFIG.quality, progressive: true })
+      .jpeg({ quality: config.quality, progressive: true })
       .toBuffer();
 
     const compressedSizeKB = compressedBuffer.length / 1024;
@@ -166,8 +179,8 @@ router.post('/image', async (req, res) => {
       imageBuffer = Buffer.from(image, 'base64');
     }
 
-    // 自动压缩图片
-    const compressed = await compressImage(imageBuffer, contentType);
+    // 自动压缩图片（传入folder用于选择压缩配置）
+    const compressed = await compressImage(imageBuffer, contentType, folder);
     imageBuffer = compressed.buffer;
     contentType = compressed.contentType;
 
