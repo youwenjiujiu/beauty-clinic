@@ -67,15 +67,8 @@ app.use(morgan('combined'));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// 静态文件服务（管理后台）- 审核模式下隐藏
-if (process.env.APP_MODE !== 'review') {
-  app.use('/admin', express.static('admin-dashboard'));
-} else {
-  // 审核模式下返回404
-  app.use('/admin', (req, res) => {
-    res.status(404).send('Not Found');
-  });
-}
+// 静态文件服务（管理后台）- 始终可用（需要密码登录）
+app.use('/admin', express.static('admin-dashboard'));
 
 // 限流配置（Vercel 上禁用，因为 IP 不可靠）
 if (!process.env.VERCEL) {
@@ -109,16 +102,9 @@ app.use('/api/health', require('./routes/health'));
 app.use('/api/test-mongo', require('./routes/test-mongo'));
 app.use('/api/notifications', require('./routes/notifications'));
 
-// 审核模式下禁用所有admin相关API
-if (process.env.APP_MODE !== 'review') {
-  app.use('/api/admin', adminRoutes);
-  app.use('/api/admin/config', require('./routes/admin/config'));
-} else {
-  // 审核模式下返回404
-  app.use('/api/admin', (req, res) => {
-    res.status(404).json({ success: false, message: 'Not Found' });
-  });
-}
+// 管理API - 始终可用（需要密码登录验证）
+app.use('/api/admin', adminRoutes);
+app.use('/api/admin/config', require('./routes/admin/config'));
 
 app.use('/api/upload', require('./routes/upload'));
 
