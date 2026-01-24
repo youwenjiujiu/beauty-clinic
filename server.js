@@ -81,8 +81,10 @@ if (process.env.APP_MODE !== 'review') {
 if (!process.env.VERCEL) {
   const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15分钟
-    max: 100, // 限制100个请求
-    message: '请求过于频繁，请稍后再试'
+    max: 500, // 限制500个请求（放宽限制）
+    message: '请求过于频繁，请稍后再试',
+    // 跳过admin相关请求的限流
+    skip: (req) => req.path.includes('/admin') || req.path.includes('/auth')
   });
   app.use('/api/', limiter);
 }
