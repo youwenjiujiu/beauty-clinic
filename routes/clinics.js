@@ -336,6 +336,19 @@ function checkAdmin(req) {
  * GET /api/clinics/admin/all
  */
 router.get('/admin/all', async (req, res) => {
+  // 解析 token
+  try {
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+      const jwt = require('jsonwebtoken');
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'default_jwt_secret_2025');
+      req.user = decoded;
+    }
+  } catch (e) {
+    // token 验证失败，继续检查其他方式
+  }
+
   if (!checkAdmin(req)) {
     return res.status(403).json({
       success: false,
