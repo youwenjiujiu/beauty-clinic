@@ -694,7 +694,11 @@ const app = createApp({
       this.uploadingPriceImage = true;
 
       try {
-        // 确保priceImages是数组
+        // 确保editingClinic和priceImages存在
+        if (!this.editingClinic) {
+          alert('请先选择要编辑的诊所');
+          return;
+        }
         if (!this.editingClinic.priceImages) {
           this.editingClinic.priceImages = [];
         }
