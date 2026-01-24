@@ -106,8 +106,18 @@ app.use('/api/consultants', advisorsRoute);
 app.use('/api/health', require('./routes/health'));
 app.use('/api/test-mongo', require('./routes/test-mongo'));
 app.use('/api/notifications', require('./routes/notifications'));
-app.use('/api/admin', adminRoutes);
-app.use('/api/admin/config', require('./routes/admin/config'));
+
+// 审核模式下禁用所有admin相关API
+if (process.env.APP_MODE !== 'review') {
+  app.use('/api/admin', adminRoutes);
+  app.use('/api/admin/config', require('./routes/admin/config'));
+} else {
+  // 审核模式下返回404
+  app.use('/api/admin', (req, res) => {
+    res.status(404).json({ success: false, message: 'Not Found' });
+  });
+}
+
 app.use('/api/upload', require('./routes/upload'));
 
 // 健康检查
