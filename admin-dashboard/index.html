@@ -158,8 +158,16 @@
           <div v-if="activeMenu === 'clinics'" class="bg-white rounded-lg shadow p-6">
             <h2 class="text-2xl font-bold mb-6">诊所管理</h2>
 
-            <div class="mb-4">
+            <!-- 搜索和添加 -->
+            <div class="mb-4 flex items-center gap-4">
               <button @click="addClinic" class="bg-green-500 text-white px-4 py-2 rounded">添加诊所</button>
+              <div class="flex-1 flex gap-2">
+                <input v-model="clinicSearchKeyword" type="text" placeholder="搜索诊所名称..."
+                  class="border rounded px-3 py-2 flex-1" @keyup.enter="searchClinics">
+                <button @click="searchClinics" class="bg-blue-500 text-white px-4 py-2 rounded">搜索</button>
+                <button v-if="clinicSearchKeyword" @click="clinicSearchKeyword=''; searchClinics()" class="bg-gray-500 text-white px-4 py-2 rounded">清除</button>
+              </div>
+              <span class="text-gray-500 text-sm">共 {{ clinicPagination.total }} 个诊所</span>
             </div>
 
             <table class="w-full border-collapse">
@@ -174,9 +182,9 @@
               </thead>
               <tbody>
                 <tr v-for="clinic in clinics" :key="clinic._id">
-                  <td class="border px-4 py-2">{{ clinic.name }}</td>
+                  <td class="border px-4 py-2">{{ clinic.name || clinic.nameCn }}</td>
                   <td class="border px-4 py-2">{{ clinic.district }}</td>
-                  <td class="border px-4 py-2">{{ clinic.rating }}</td>
+                  <td class="border px-4 py-2">{{ clinic.rating || clinic.naverRating || 0 }}</td>
                   <td class="border px-4 py-2">
                     <span :class="clinic.status === 'active' ? 'text-green-600' : 'text-red-600'">
                       {{ clinic.status === 'active' ? '启用' : '停用' }}
@@ -192,6 +200,19 @@
                 </tr>
               </tbody>
             </table>
+
+            <!-- 分页控件 -->
+            <div v-if="clinicPagination.pages > 1" class="mt-4 flex items-center justify-center gap-2">
+              <button @click="goToClinicPage(1)" :disabled="clinicPagination.page === 1"
+                class="px-3 py-1 border rounded" :class="clinicPagination.page === 1 ? 'bg-gray-100 text-gray-400' : 'hover:bg-gray-100'">首页</button>
+              <button @click="goToClinicPage(clinicPagination.page - 1)" :disabled="clinicPagination.page === 1"
+                class="px-3 py-1 border rounded" :class="clinicPagination.page === 1 ? 'bg-gray-100 text-gray-400' : 'hover:bg-gray-100'">上一页</button>
+              <span class="px-4">第 {{ clinicPagination.page }} / {{ clinicPagination.pages }} 页</span>
+              <button @click="goToClinicPage(clinicPagination.page + 1)" :disabled="clinicPagination.page === clinicPagination.pages"
+                class="px-3 py-1 border rounded" :class="clinicPagination.page === clinicPagination.pages ? 'bg-gray-100 text-gray-400' : 'hover:bg-gray-100'">下一页</button>
+              <button @click="goToClinicPage(clinicPagination.pages)" :disabled="clinicPagination.page === clinicPagination.pages"
+                class="px-3 py-1 border rounded" :class="clinicPagination.page === clinicPagination.pages ? 'bg-gray-100 text-gray-400' : 'hover:bg-gray-100'">末页</button>
+            </div>
           </div>
 
           <!-- 陪同顾问管理 -->

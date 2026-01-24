@@ -332,6 +332,70 @@ function checkAdmin(req) {
 }
 
 /**
+ * 管理员获取所有诊所（支持分页，按创建时间倒序）
+ * GET /api/clinics/admin/all
+ */
+router.get('/admin/all', async (req, res) => {
+  if (!checkAdmin(req)) {
+    return res.status(403).json({
+      success: false,
+      message: '需要管理员权限'
+    });
+  }
+
+  try {
+    await ensureConnected();
+    const {
+      page = 1,
+      limit = 50,
+      status,
+      keyword
+    } = req.query;
+
+    // 构建查询条件（不限制status，显示所有诊所）
+    const query = {};
+    if (status) query.status = status;
+    if (keyword) {
+      query.$or = [
+        { name: { $regex: keyword, $options: 'i' } },
+        { nameCn: { $regex: keyword, $options: 'i' } },
+        { nameKr: { $regex: keyword, $options: 'i' } }
+      ];
+    }
+
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    // 按创建时间倒序（最新的在前面）
+    const clinics = await Clinic
+      .find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    const total = await Clinic.countDocuments(query);
+
+    res.json({
+      success: true,
+      data: {
+        clinics,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total,
+          pages: Math.ceil(total / parseInt(limit))
+        }
+      }
+    });
+  } catch (error) {
+    console.error('获取诊所列表失败:', error);
+    res.status(500).json({
+      success: false,
+      message: '获取诊所列表失败'
+    });
+  }
+});
+
+/**
  * 管理员创建诊所
  * POST /api/clinics/admin
  */

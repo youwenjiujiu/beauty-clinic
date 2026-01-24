@@ -51,6 +51,13 @@ const app = createApp({
 
       // 诊所列表
       clinics: [],
+      clinicPagination: {
+        page: 1,
+        limit: 50,
+        total: 0,
+        pages: 0
+      },
+      clinicSearchKeyword: '',
       showClinicModal: false,
       editingClinic: {
         name: '',
@@ -543,15 +550,48 @@ const app = createApp({
       }
     },
 
-    // 加载诊所列表
-    async loadClinics() {
+    // 加载诊所列表（支持分页）
+    async loadClinics(page = 1) {
       try {
-        const result = await this.apiRequest('GET', '/clinics?limit=100');
+        const params = new URLSearchParams({
+          page: page,
+          limit: this.clinicPagination.limit
+        });
+        if (this.clinicSearchKeyword) {
+          params.append('keyword', this.clinicSearchKeyword);
+        }
+
+        const result = await this.apiRequest('GET', `/clinics/admin/all?${params.toString()}`);
         if (result.success) {
-          this.clinics = result.data.clinics;
+          this.clinics = result.data.clinics || [];
+          if (result.data.pagination) {
+            this.clinicPagination = result.data.pagination;
+          }
         }
       } catch (error) {
         console.error('加载诊所失败:', error);
+        // 降级到普通接口
+        try {
+          const result = await this.apiRequest('GET', '/clinics?limit=100');
+          if (result.success) {
+            this.clinics = result.data.clinics || [];
+          }
+        } catch (e) {
+          console.error('降级加载也失败:', e);
+        }
+      }
+    },
+
+    // 诊所搜索
+    searchClinics() {
+      this.clinicPagination.page = 1;
+      this.loadClinics(1);
+    },
+
+    // 诊所分页
+    goToClinicPage(page) {
+      if (page >= 1 && page <= this.clinicPagination.pages) {
+        this.loadClinics(page);
       }
     },
 
